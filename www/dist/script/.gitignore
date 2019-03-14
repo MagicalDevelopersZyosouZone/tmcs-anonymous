@@ -1,0 +1,3 @@
+# Ignore webpack bundle
+*.bundle.js
+*.bundle.js.map

@@ -1,0 +1,35 @@
+syntax = "proto3";
+package tmcs_msg;
+
+message NewSession{
+    string pubkey = 1;
+    int64 lifeTime = 2;
+    bool group = 3;
+}
+
+message SignedMsg{
+
+    // Protobuf binary of {Message}, not encrypted
+    bytes message = 1;
+    string fingerPrint = 2;
+    // Signature of message binary
+    string sign = 3;
+}
+
+message Message{
+    // PGP fingerprint of receiver
+    string receiver = 1;
+    // Message body encrypted with sender's private key
+    bytes encryptedMsg = 2;
+}
+
+message Connect{
+    string fingerPrint = 1;
+}
+
+message JoinSession{
+    string pubkey = 1;
+    string token = 2;
+    string targetFingerPrint = 3;
+
+}

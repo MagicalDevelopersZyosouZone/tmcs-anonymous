@@ -1,0 +1,39 @@
+{
+  "name": "tmcs-anonymous",
+  "version": "1.0.0",
+  "description": "A PGP based anonymous IM platform.",
+  "main": "index.js",
+  "scripts": {
+    "build": "npx webpack",
+    "build:watch": "npx webpack -w --mode development",
+    "test": "npx mocha ./www/test/test.js",
+    "protoc:go": "cd ./proto && protoc --go_out=../src/tmcs_msg ./tmcs_msg.proto",
+    "protoc:js": "protoc --plugin=./node_modules/.bin/protoc-gen-ts --js_out=import_style=commonjs,binary:./www/src --ts_out=./www/src ./proto/tmcs_msg.proto",
+    "protoc": "npm run protoc:js && npm run protoc:go"
+  },
+  "keywords": [
+    "pgp",
+    "im"
+  ],
+  "author": "mdzz.studio",
+  "license": "GPL-3.0",
+  "devDependencies": {
+    "browser-sync": "^2.26.3",
+    "mocha": "^6.0.2",
+    "ts-loader": "^5.3.3",
+    "ts-protoc-gen": "^0.9.0",
+    "typescript": "^3.3.3333",
+    "webpack": "^4.29.6",
+    "webpack-cli": "^3.2.3"
+  },
+  "dependencies": {
+    "@types/chai": "^4.1.7",
+    "@types/mocha": "^5.2.6",
+    "@types/openpgp": "^4.4.0",
+    "@types/protobufjs": "^6.0.0",
+    "chai": "^4.2.0",
+    "google-protobuf": "^3.7.0",
+    "linq": "^3.1.1",
+    "openpgp": "^4.4.10"
+  }
+}
