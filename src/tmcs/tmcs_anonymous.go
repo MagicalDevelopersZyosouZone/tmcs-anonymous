@@ -1,14 +1,14 @@
 package tmcs
 
 import (
-	"key"
-	"session"
+	"manager"
+	"user"
 )
 
 type TMCSAnonymous struct {
-	KeyManager key.KeyManager
+	KeyManager manager.KeyManager
 }
 
-func (tmcs *TMCSAnonymous) Register(user *session.User) {
+func (tmcs *TMCSAnonymous) Register(user *user.User) {
 
 }

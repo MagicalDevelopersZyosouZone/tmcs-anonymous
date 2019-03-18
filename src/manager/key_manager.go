@@ -1,4 +1,4 @@
-package key
+package manager
 
 import (
 	// "golang.org/x/crypto/openpgp"
@@ -6,13 +6,14 @@ import (
 	"errors"
 	"lib"
 	"sync"
+	"user"
 )
 
 type KeyManager struct {
 	muKeys       sync.Mutex
 	keyLifeCycle *lib.LifeCycleMgr
 	keyList      *list.List
-	mapedKeys    map[string]*SessionKey
+	mapedKeys    map[string]*user.Key
 	options      KeyManagerOption
 	chAddKey     chan request
 	chGetKey     chan keyQuery
@@ -21,7 +22,7 @@ type KeyManager struct {
 
 type keyQuery struct {
 	fingerprint string
-	chResult    chan *SessionKey
+	chResult    chan *user.Key
 }
 
 type request struct {
@@ -35,14 +36,14 @@ type KeyManagerOption struct {
 	CheckExpire   int
 }
 
-func (keymgr *KeyManager) getKeyInternal(fingerprint string) *SessionKey {
+func (keymgr *KeyManager) getKeyInternal(fingerprint string) *user.Key {
 	if key, ok := keymgr.mapedKeys[fingerprint]; ok {
 		return key
 	}
 	return nil
 }
 
-func (keymgr *KeyManager) addKeyInternal(key *SessionKey) error {
+func (keymgr *KeyManager) addKeyInternal(key *user.Key) error {
 	if _, ok := keymgr.mapedKeys[key.FingerPrint]; ok {
 		return errors.New("Public key existed.")
 	}
@@ -63,7 +64,7 @@ func (keymgr *KeyManager) manageKeys() {
 		select {
 
 		case expired := <-keymgr.keyLifeCycle.Expire():
-			key := expired.(*SessionKey)
+			key := expired.(*user.Key)
 			delete(keymgr.mapedKeys, key.FingerPrint)
 
 		case removeKey, ok := <-keymgr.chRmKey:
@@ -83,7 +84,7 @@ func (keymgr *KeyManager) manageKeys() {
 			if !ok {
 				goto STOP_MGR
 			}
-			key := addRequest.obj.(*SessionKey)
+			key := addRequest.obj.(*user.Key)
 			err := keymgr.addKeyInternal(key)
 			addRequest.chErr <- err
 
@@ -104,7 +105,7 @@ func CreateKeyManager(option KeyManagerOption) *KeyManager {
 		option.ExpireSeconds = 300
 	}
 	keymgr.options = option
-	keymgr.mapedKeys = make(map[string]*SessionKey)
+	keymgr.mapedKeys = make(map[string]*user.Key)
 	keymgr.keyList = list.New()
 	keymgr.chAddKey = make(chan request, option.ChannelBuffer)
 	keymgr.chGetKey = make(chan keyQuery, option.ChannelBuffer)
@@ -112,7 +113,7 @@ func CreateKeyManager(option KeyManagerOption) *KeyManager {
 	return keymgr
 }
 
-func (keymgr *KeyManager) AddKey(key *SessionKey) error {
+func (keymgr *KeyManager) AddKey(key *user.Key) error {
 	req := request{chErr: make(chan error)}
 	req.obj = key
 	keymgr.chAddKey <- req
@@ -120,8 +121,8 @@ func (keymgr *KeyManager) AddKey(key *SessionKey) error {
 	return err
 }
 
-func (keymgr *KeyManager) GetKey(fingerprint string) *SessionKey {
-	ch := make(chan *SessionKey)
+func (keymgr *KeyManager) GetKey(fingerprint string) *user.Key {
+	ch := make(chan *user.Key)
 	req := keyQuery{fingerprint: fingerprint, chResult: ch}
 	keymgr.chGetKey <- req
 	return <-req.chResult
