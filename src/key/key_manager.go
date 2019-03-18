@@ -6,7 +6,6 @@ import (
 	"errors"
 	"lib"
 	"sync"
-	"time"
 )
 
 type KeyManager struct {
@@ -18,13 +17,6 @@ type KeyManager struct {
 	chAddKey     chan request
 	chGetKey     chan keyQuery
 	chRmKey      chan string
-}
-
-type SessionKey struct {
-	PublicKey     string
-	FingerPrint   string
-	GeneratedTime time.Time
-	LifeTime      int64
 }
 
 type keyQuery struct {

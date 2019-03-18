@@ -1,7 +1,12 @@
 package key
 
-import "fmt"
+import (
+	"time"
+)
 
-func Keeeey() {
-	fmt.Println("key")
+type SessionKey struct {
+	PublicKey     []byte
+	FingerPrint   string
+	GeneratedTime time.Time
+	LifeTime      int64
 }
