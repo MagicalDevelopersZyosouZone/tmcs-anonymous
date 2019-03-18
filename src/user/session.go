@@ -13,3 +13,7 @@ type Session struct {
 	connection websocket.Conn
 	chPost     chan *tmcs_msg.SignedMsg
 }
+
+func NewSession(connection websocket.Conn) (*Session, error) {
+	return nil, nil
+}
