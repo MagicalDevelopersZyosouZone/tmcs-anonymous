@@ -9,18 +9,30 @@ message NewSession{
 
 message SignedMsg{
 
-    // Protobuf binary of {Message}, not encrypted
+    // Protobuf binary of {MsgPackage}, not encrypted
     bytes message = 1;
     string fingerPrint = 2;
+    string sender = 3;
     // Signature of message binary
-    string sign = 3;
+    string sign = 4;
+    enum MsgType{
+        Message = 0;
+        Receipt = 1;
+    }
+    MsgType type = 5;
+}
+
+message MsgPackage{
+    repeated MsgReceipt receipts = 1;
+    repeated Message messages = 2;
 }
 
 message Message{
+    string msgId = 1;
     // PGP fingerprint of receiver
-    string receiver = 1;
+    string receiver = 2;
     // Message body encrypted with sender's private key
-    bytes encryptedMsg = 2;
+    bytes encryptedMsg = 3;
 }
 
 message Connect{
@@ -32,4 +44,14 @@ message JoinSession{
     string token = 2;
     string targetFingerPrint = 3;
 
+}
+
+message MsgReceipt{
+    string msgId = 1;
+    enum MsgState{
+        Lost = 0;
+        Received = 1;
+        Timeout = 2;
+    }
+    MsgState state = 2;
 }

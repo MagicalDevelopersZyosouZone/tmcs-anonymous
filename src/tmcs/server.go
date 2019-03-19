@@ -8,6 +8,7 @@ import (
 )
 
 type TMCSAnonymousServer struct {
+	Active   bool
 	tmcs     *TMCSAnonymous
 	upgrader websocket.Upgrader
 	addr     string
@@ -29,18 +30,29 @@ func (server *TMCSAnonymousServer) Start() error {
 	server.http = http.NewServeMux()
 	server.server = &http.Server{
 		Addr:    server.addr,
-		Handler: tmcs.http,
+		Handler: server.http,
 	}
 	server.http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
 		conn, err := server.upgrader.Upgrade(w, r, nil)
-		if err {
+		if err != nil {
 			serverlog.Error("Failed when upgrade to WebSocket: ", err.Error())
 			return
 		}
+
 	})
-	return http.ListenAndServe(server.addr, nil)
+	err := server.server.ListenAndServe()
+	if err != nil {
+		return err
+	}
+	server.Active = true
+	return nil
 }
 
-func (server *TMCSAnonymousServer) Stop() {
-
+func (server *TMCSAnonymousServer) Stop() error {
+	err := server.server.Shutdown(nil)
+	if err != nil {
+		return err
+	}
+	server.Active = false
+	return nil
 }

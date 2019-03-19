@@ -28,8 +28,9 @@
   },
   "dependencies": {
     "@types/chai": "^4.1.7",
+    "@types/google-protobuf": "^3.2.7",
     "@types/mocha": "^5.2.6",
-    "@types/openpgp": "^4.4.0",
+    "@types/openpgp": "^4.4.2",
     "@types/protobufjs": "^6.0.0",
     "chai": "^4.2.0",
     "google-protobuf": "^3.7.0",
