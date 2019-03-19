@@ -2089,7 +2089,7 @@ proto.tmcs_msg.SignIn.toObject = function(includeInstance, msg) {
   var f, obj = {
     fingerprint: jspb.Message.getFieldWithDefault(msg, 1, ""),
     token: jspb.Message.getFieldWithDefault(msg, 2, ""),
-    sign: jspb.Message.getFieldWithDefault(msg, 3, "")
+    sign: msg.getSign_asB64()
   };
 
   if (includeInstance) {
@@ -2135,7 +2135,7 @@ proto.tmcs_msg.SignIn.deserializeBinaryFromReader = function(msg, reader) {
       msg.setToken(value);
       break;
     case 3:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {!Uint8Array} */ (reader.readBytes());
       msg.setSign(value);
       break;
     default:
@@ -2181,9 +2181,9 @@ proto.tmcs_msg.SignIn.serializeBinaryToWriter = function(message, writer) {
       f
     );
   }
-  f = message.getSign();
+  f = message.getSign_asU8();
   if (f.length > 0) {
-    writer.writeString(
+    writer.writeBytes(
       3,
       f
     );
@@ -2222,17 +2222,41 @@ proto.tmcs_msg.SignIn.prototype.setToken = function(value) {
 
 
 /**
- * optional string sign = 3;
- * @return {string}
+ * optional bytes sign = 3;
+ * @return {!(string|Uint8Array)}
  */
 proto.tmcs_msg.SignIn.prototype.getSign = function() {
-  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 3, ""));
+  return /** @type {!(string|Uint8Array)} */ (jspb.Message.getFieldWithDefault(this, 3, ""));
 };
 
 
-/** @param {string} value */
+/**
+ * optional bytes sign = 3;
+ * This is a type-conversion wrapper around `getSign()`
+ * @return {string}
+ */
+proto.tmcs_msg.SignIn.prototype.getSign_asB64 = function() {
+  return /** @type {string} */ (jspb.Message.bytesAsB64(
+      this.getSign()));
+};
+
+
+/**
+ * optional bytes sign = 3;
+ * Note that Uint8Array is not supported on all browsers.
+ * @see http://caniuse.com/Uint8Array
+ * This is a type-conversion wrapper around `getSign()`
+ * @return {!Uint8Array}
+ */
+proto.tmcs_msg.SignIn.prototype.getSign_asU8 = function() {
+  return /** @type {!Uint8Array} */ (jspb.Message.bytesAsU8(
+      this.getSign()));
+};
+
+
+/** @param {!(string|Uint8Array)} value */
 proto.tmcs_msg.SignIn.prototype.setSign = function(value) {
-  jspb.Message.setProto3StringField(this, 3, value);
+  jspb.Message.setProto3BytesField(this, 3, value);
 };
 
 
@@ -2241,8 +2265,9 @@ proto.tmcs_msg.SignIn.prototype.setSign = function(value) {
  */
 proto.tmcs_msg.ErrorCode = {
   NONE: 0,
+  INVALIDMESSAGE: 1000,
   VERIFYERROR: 1001,
-  INVALIDMESSAGE: 1000
+  RECEIVERUNKNOWN: 1002
 };
 
 goog.object.extend(exports, proto.tmcs_msg);

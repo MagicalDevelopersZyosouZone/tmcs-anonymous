@@ -297,8 +297,10 @@ export class SignIn extends jspb.Message {
   getToken(): string;
   setToken(value: string): void;
 
-  getSign(): string;
-  setSign(value: string): void;
+  getSign(): Uint8Array | string;
+  getSign_asU8(): Uint8Array;
+  getSign_asB64(): string;
+  setSign(value: Uint8Array | string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): SignIn.AsObject;
@@ -314,13 +316,14 @@ export namespace SignIn {
   export type AsObject = {
     fingerprint: string,
     token: string,
-    sign: string,
+    sign: Uint8Array | string,
   }
 }
 
 export enum ErrorCode {
   NONE = 0,
-  VERIFYERROR = 1001,
   INVALIDMESSAGE = 1000,
+  VERIFYERROR = 1001,
+  RECEIVERUNKNOWN = 1002,
 }
 

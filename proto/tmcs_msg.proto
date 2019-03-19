@@ -73,11 +73,12 @@ message ServerHandShake{
 message SignIn{
     string fingerPrint = 1;
     string token = 2;
-    string sign = 3;
+    bytes sign = 3;
 }
 
 enum ErrorCode{
     None = 0;
-    VerifyError = 1001;
     InvalidMessage = 1000;
+    VerifyError = 1001;
+    ReceiverUnknown = 1002;
 }
