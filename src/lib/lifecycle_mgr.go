@@ -16,7 +16,7 @@ type LifeCycleMgr struct {
 	checkInterval int64
 }
 
-type LifeCycleMgrElement struct {
+type LifeCycleElement struct {
 	value      interface{}
 	addTime    time.Time
 	expireTIme time.Time
@@ -25,11 +25,19 @@ type LifeCycleMgrElement struct {
 type lifecycleRequest struct {
 	value interface{}
 	// expire in miliseconds
-	lifeTime int64
-	chErr    chan error
+	lifeTime  int64
+	chElement chan *LifeCycleElement
 }
 
 type listType list.List
+
+func (lifecycleElement *LifeCycleElement) Renew(milliSeconds int64) {
+	lifecycleElement.expireTIme = time.Now().Add(time.Duration(milliSeconds) * time.Millisecond)
+}
+
+func (lifecycleElement *LifeCycleElement) Expired() bool {
+	return lifecycleElement.expireTIme.Sub(time.Now()) < 0
+}
 
 func (lt *listType) Remove(cmpr func(el interface{}) bool) {
 	var l *list.List
@@ -42,29 +50,19 @@ func (lt *listType) Remove(cmpr func(el interface{}) bool) {
 	}
 }
 
-func (lifecycle *LifeCycleMgr) addInternal(el interface{}, lifeTimeMiliSec int64) error {
-	element := LifeCycleMgrElement{
+func (lifecycle *LifeCycleMgr) addInternal(el interface{}, lifeTimeMiliSec int64) (*LifeCycleElement, error) {
+	element := &LifeCycleElement{
 		value:      el,
 		addTime:    time.Now(),
 		expireTIme: time.Now().Add(time.Duration(lifeTimeMiliSec) * time.Millisecond),
 	}
 	lifecycle.elements.PushBack(element)
-	return nil
-	/*
-		for p := lifecycle.elements.Front(); p != nil; p = p.Next() {
-			el := p.Value.(LifeCycleMgrElement)
-			if element.expireTIme.Before(el.expireTIme) {
-				lifecycle.elements.InsertBefore(element, p)
-				return nil
-			}
-		}
-		lifecycle.elements.PushBack(element)
-		return nil*/
+	return element, nil
 }
 
 func (lifecycle *LifeCycleMgr) removeInternal(element interface{}) {
 	for p := lifecycle.elements.Front(); p != nil; p = p.Next() {
-		el := p.Value.(LifeCycleMgrElement)
+		el := p.Value.(*LifeCycleElement)
 		if el.value == element {
 			lifecycle.elements.Remove(p)
 		}
@@ -74,7 +72,7 @@ func (lifecycle *LifeCycleMgr) removeInternal(element interface{}) {
 func (lifecycle *LifeCycleMgr) cleanup() {
 	now := time.Now()
 	for p := lifecycle.elements.Front(); p != nil; {
-		elmt := p.Value.(LifeCycleMgrElement)
+		elmt := p.Value.(*LifeCycleElement)
 		if elmt.expireTIme.Before(now) {
 			next := p.Next()
 			lifecycle.elements.Remove(p)
@@ -115,15 +113,15 @@ func (lifecycle *LifeCycleMgr) process() {
 			if !ok {
 				goto ABORT
 			}
-			/*err :=*/ lifecycle.addInternal(req.value, req.lifeTime)
-			//req.chErr <- err
+			element, _ := lifecycle.addInternal(req.value, req.lifeTime)
+			req.chElement <- element
 
 		case req, ok := <-lifecycle.chRemove:
 			if !ok {
 				goto ABORT
 			}
 			lifecycle.removeInternal(req.value)
-			req.chErr <- nil
+			req.chElement <- nil
 
 		case <-time.After(time.Duration(lifecycle.checkInterval) * time.Millisecond):
 			lifecycle.cleanup()
@@ -133,24 +131,27 @@ func (lifecycle *LifeCycleMgr) process() {
 ABORT:
 }
 
-func (lifecycle *LifeCycleMgr) Add(element interface{}, lifeTimeMiliSec int64) error {
+func (lifecycle *LifeCycleMgr) Add(element interface{}, lifeTimeMiliSec int64) (*LifeCycleElement, error) {
 	req := lifecycleRequest{
-		lifeTime: lifeTimeMiliSec,
-		value:    element,
-		//chErr:    make(chan error),
+		lifeTime:  lifeTimeMiliSec,
+		value:     element,
+		chElement: make(chan *LifeCycleElement, 1),
 	}
 	lifecycle.chAdd <- req
-	//err := <-req.chErr
-	return nil
+	el := <-req.chElement
+	if element == nil {
+		return nil, errors.New("Failed to add.")
+	}
+	return el, nil
 }
 
 func (lifecycle *LifeCycleMgr) Remove(element interface{}) {
 	req := lifecycleRequest{
-		value: element,
-		chErr: make(chan error),
+		value:     element,
+		chElement: make(chan *LifeCycleElement),
 	}
 	lifecycle.chRemove <- req
-	<-req.chErr
+	<-req.chElement
 }
 func (lifecycle *LifeCycleMgr) Expire() chan interface{} {
 	return lifecycle.chExpire

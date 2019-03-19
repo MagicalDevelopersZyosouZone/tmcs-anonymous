@@ -3,9 +3,12 @@ package tmcs
 import (
 	"net/http"
 	"serverlog"
+	"user"
 
 	"github.com/gorilla/websocket"
 )
+
+const ChannelBufferSize = 100
 
 type TMCSAnonymousServer struct {
 	Active   bool
@@ -38,7 +41,16 @@ func (server *TMCSAnonymousServer) Start() error {
 			serverlog.Error("Failed when upgrade to WebSocket: ", err.Error())
 			return
 		}
-
+		session := user.NewSession(conn, ChannelBufferSize)
+		if !session.Start(server.tmcs.KeyLib) {
+			return
+		}
+		origin := server.tmcs.SessionManager.GetSession(session.Key.FingerPrint)
+		if origin != nil {
+			origin.Join(session)
+		} else {
+			server.tmcs.SessionManager.AddSession(session)
+		}
 	})
 	err := server.server.ListenAndServe()
 	if err != nil {

@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"lib"
 	"serverlog"
 	"time"
 	"tmcs_msg"
@@ -18,6 +19,8 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+const SessionRenewTime = 1800
+
 type SessionMessage struct {
 	Sender   *Session
 	Receiver *Session
@@ -25,16 +28,17 @@ type SessionMessage struct {
 }
 
 type Session struct {
-	Key        *Key
-	Connected  bool
-	ID         string
-	contacts   map[string]*Session
-	lastActive time.Time
-	connection *websocket.Conn
-	bufferSize int
-	chPost     chan *SessionMessage
-	chRecv     chan *tmcs_msg.SignedMsg
-	chClose    chan int
+	Key              *Key
+	Connected        bool
+	ID               string
+	LifeCycleElement *lib.LifeCycleElement
+	contacts         map[string]*Session
+	lastActive       time.Time
+	connection       *websocket.Conn
+	bufferSize       int
+	chPost           chan *SessionMessage
+	chRecv           chan *tmcs_msg.SignedMsg
+	chClose          chan int
 }
 
 type IKeyManager interface {
@@ -81,6 +85,8 @@ func (session *Session) recv() {
 				continue
 			}
 			session.dispacth(msg)
+			session.lastActive = time.Now()
+			session.LifeCycleElement.Renew(SessionRenewTime)
 		}
 
 	}
@@ -110,6 +116,8 @@ func (session *Session) send() {
 				continue
 			}
 			session.connection.WriteMessage(websocket.BinaryMessage, buffer)
+			session.lastActive = time.Now()
+			session.LifeCycleElement.Renew(SessionRenewTime)
 		}
 	}
 }
@@ -245,7 +253,7 @@ func (session *Session) handshake(keyMgr IKeyManager) bool {
 	return true
 }
 
-func NewSession(connection *websocket.Conn, bufferSize int) (*Session, error) {
+func NewSession(connection *websocket.Conn, bufferSize int) *Session {
 	session := &Session{
 		ID:         uuid.New().String(),
 		Key:        nil,
@@ -255,7 +263,7 @@ func NewSession(connection *websocket.Conn, bufferSize int) (*Session, error) {
 		connection: connection,
 		bufferSize: bufferSize,
 	}
-	return session, nil
+	return session
 }
 
 func (session *Session) Start(keyMgr IKeyManager) bool {
