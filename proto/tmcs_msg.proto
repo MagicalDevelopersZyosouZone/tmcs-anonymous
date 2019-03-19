@@ -8,19 +8,23 @@ message NewSession{
 }
 
 message SignedMsg{
-
-    // Protobuf binary of {MsgPackage}, not encrypted
-    bytes message = 1;
-    string fingerPrint = 2;
-    string sender = 3;
-    // Signature of message binary
-    string sign = 4;
-    enum MsgType{
+    enum Type{
         Message = 0;
         Receipt = 1;
+        Error = 2;
     }
-    MsgType type = 5;
+    int32 id = 1;
+    Type type = 2;
+    string receiver = 3;
+    string sender = 4;
+    bytes body = 5;
+    bytes sign = 6;
 }
+
+message MessagePack{
+    repeated Message msg = 1;
+}
+
 
 message MsgPackage{
     repeated MsgReceipt receipts = 1;
@@ -31,19 +35,13 @@ message Message{
     string msgId = 1;
     // PGP fingerprint of receiver
     string receiver = 2;
+    int64 timestamp = 3;
     // Message body encrypted with sender's private key
-    bytes encryptedMsg = 3;
+    bytes encryptedMsg = 4;
 }
 
-message Connect{
-    string fingerPrint = 1;
-}
-
-message JoinSession{
-    string pubkey = 1;
-    string token = 2;
-    string targetFingerPrint = 3;
-
+message ReceiptPack{
+    repeated MsgReceipt receipts = 1;
 }
 
 message MsgReceipt{
@@ -52,6 +50,34 @@ message MsgReceipt{
         Lost = 0;
         Received = 1;
         Timeout = 2;
+        VerifyFailed = 4;
     }
     MsgState state = 2;
+}
+
+message Error{
+    ErrorCode code = 1;
+    string message = 2;
+    string data = 3;
+}
+
+message ClientHandShake{
+    int32 clientVersion = 1;
+}
+
+message ServerHandShake{
+    int32 serverVersion = 1;
+    string token = 2;
+}
+
+message SignIn{
+    string fingerPrint = 1;
+    string token = 2;
+    string sign = 3;
+}
+
+enum ErrorCode{
+    None = 0;
+    VerifyError = 1001;
+    InvalidMessage = 1000;
 }

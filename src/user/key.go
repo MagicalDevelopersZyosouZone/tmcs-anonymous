@@ -9,7 +9,7 @@ import (
 )
 
 type Key struct {
-	PublicKey   *openpgp.Entity
+	PublicKey   openpgp.EntityList
 	pubkey      []byte
 	FingerPrint string
 	UploadTime  time.Time
@@ -23,7 +23,7 @@ func NewKey(pubkeyData []byte, lifeTime int64) (*Key, error) {
 	if err != nil {
 		return nil, err
 	}
-	key.PublicKey = pubkey[0]
+	key.PublicKey = pubkey
 	key.pubkey = pubkeyData
 	key.FingerPrint = hex.EncodeToString(pubkey[0].PrimaryKey.Fingerprint[0:])
 	key.UploadTime = time.Now()

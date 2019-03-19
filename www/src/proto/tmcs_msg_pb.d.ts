@@ -32,22 +32,27 @@ export namespace NewSession {
 }
 
 export class SignedMsg extends jspb.Message {
-  getMessage(): Uint8Array | string;
-  getMessage_asU8(): Uint8Array;
-  getMessage_asB64(): string;
-  setMessage(value: Uint8Array | string): void;
+  getId(): number;
+  setId(value: number): void;
 
-  getFingerprint(): string;
-  setFingerprint(value: string): void;
+  getType(): SignedMsg.Type;
+  setType(value: SignedMsg.Type): void;
+
+  getReceiver(): string;
+  setReceiver(value: string): void;
 
   getSender(): string;
   setSender(value: string): void;
 
-  getSign(): string;
-  setSign(value: string): void;
+  getBody(): Uint8Array | string;
+  getBody_asU8(): Uint8Array;
+  getBody_asB64(): string;
+  setBody(value: Uint8Array | string): void;
 
-  getType(): SignedMsg.MsgType;
-  setType(value: SignedMsg.MsgType): void;
+  getSign(): Uint8Array | string;
+  getSign_asU8(): Uint8Array;
+  getSign_asB64(): string;
+  setSign(value: Uint8Array | string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): SignedMsg.AsObject;
@@ -61,16 +66,40 @@ export class SignedMsg extends jspb.Message {
 
 export namespace SignedMsg {
   export type AsObject = {
-    message: Uint8Array | string,
-    fingerprint: string,
+    id: number,
+    type: SignedMsg.Type,
+    receiver: string,
     sender: string,
-    sign: string,
-    type: SignedMsg.MsgType,
+    body: Uint8Array | string,
+    sign: Uint8Array | string,
   }
 
-  export enum MsgType {
+  export enum Type {
     MESSAGE = 0,
     RECEIPT = 1,
+    ERROR = 2,
+  }
+}
+
+export class MessagePack extends jspb.Message {
+  clearMsgList(): void;
+  getMsgList(): Array<Message>;
+  setMsgList(value: Array<Message>): void;
+  addMsg(value?: Message, index?: number): Message;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): MessagePack.AsObject;
+  static toObject(includeInstance: boolean, msg: MessagePack): MessagePack.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: MessagePack, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): MessagePack;
+  static deserializeBinaryFromReader(message: MessagePack, reader: jspb.BinaryReader): MessagePack;
+}
+
+export namespace MessagePack {
+  export type AsObject = {
+    msgList: Array<Message.AsObject>,
   }
 }
 
@@ -109,6 +138,9 @@ export class Message extends jspb.Message {
   getReceiver(): string;
   setReceiver(value: string): void;
 
+  getTimestamp(): number;
+  setTimestamp(value: number): void;
+
   getEncryptedmsg(): Uint8Array | string;
   getEncryptedmsg_asU8(): Uint8Array;
   getEncryptedmsg_asB64(): string;
@@ -128,55 +160,30 @@ export namespace Message {
   export type AsObject = {
     msgid: string,
     receiver: string,
+    timestamp: number,
     encryptedmsg: Uint8Array | string,
   }
 }
 
-export class Connect extends jspb.Message {
-  getFingerprint(): string;
-  setFingerprint(value: string): void;
+export class ReceiptPack extends jspb.Message {
+  clearReceiptsList(): void;
+  getReceiptsList(): Array<MsgReceipt>;
+  setReceiptsList(value: Array<MsgReceipt>): void;
+  addReceipts(value?: MsgReceipt, index?: number): MsgReceipt;
 
   serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): Connect.AsObject;
-  static toObject(includeInstance: boolean, msg: Connect): Connect.AsObject;
+  toObject(includeInstance?: boolean): ReceiptPack.AsObject;
+  static toObject(includeInstance: boolean, msg: ReceiptPack): ReceiptPack.AsObject;
   static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
   static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
-  static serializeBinaryToWriter(message: Connect, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): Connect;
-  static deserializeBinaryFromReader(message: Connect, reader: jspb.BinaryReader): Connect;
+  static serializeBinaryToWriter(message: ReceiptPack, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ReceiptPack;
+  static deserializeBinaryFromReader(message: ReceiptPack, reader: jspb.BinaryReader): ReceiptPack;
 }
 
-export namespace Connect {
+export namespace ReceiptPack {
   export type AsObject = {
-    fingerprint: string,
-  }
-}
-
-export class JoinSession extends jspb.Message {
-  getPubkey(): string;
-  setPubkey(value: string): void;
-
-  getToken(): string;
-  setToken(value: string): void;
-
-  getTargetfingerprint(): string;
-  setTargetfingerprint(value: string): void;
-
-  serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): JoinSession.AsObject;
-  static toObject(includeInstance: boolean, msg: JoinSession): JoinSession.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
-  static serializeBinaryToWriter(message: JoinSession, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): JoinSession;
-  static deserializeBinaryFromReader(message: JoinSession, reader: jspb.BinaryReader): JoinSession;
-}
-
-export namespace JoinSession {
-  export type AsObject = {
-    pubkey: string,
-    token: string,
-    targetfingerprint: string,
+    receiptsList: Array<MsgReceipt.AsObject>,
   }
 }
 
@@ -207,6 +214,113 @@ export namespace MsgReceipt {
     LOST = 0,
     RECEIVED = 1,
     TIMEOUT = 2,
+    VERIFYFAILED = 4,
   }
+}
+
+export class Error extends jspb.Message {
+  getCode(): ErrorCode;
+  setCode(value: ErrorCode): void;
+
+  getMessage(): string;
+  setMessage(value: string): void;
+
+  getData(): string;
+  setData(value: string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): Error.AsObject;
+  static toObject(includeInstance: boolean, msg: Error): Error.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: Error, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): Error;
+  static deserializeBinaryFromReader(message: Error, reader: jspb.BinaryReader): Error;
+}
+
+export namespace Error {
+  export type AsObject = {
+    code: ErrorCode,
+    message: string,
+    data: string,
+  }
+}
+
+export class ClientHandShake extends jspb.Message {
+  getClientversion(): number;
+  setClientversion(value: number): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ClientHandShake.AsObject;
+  static toObject(includeInstance: boolean, msg: ClientHandShake): ClientHandShake.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: ClientHandShake, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ClientHandShake;
+  static deserializeBinaryFromReader(message: ClientHandShake, reader: jspb.BinaryReader): ClientHandShake;
+}
+
+export namespace ClientHandShake {
+  export type AsObject = {
+    clientversion: number,
+  }
+}
+
+export class ServerHandShake extends jspb.Message {
+  getServerversion(): number;
+  setServerversion(value: number): void;
+
+  getToken(): string;
+  setToken(value: string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ServerHandShake.AsObject;
+  static toObject(includeInstance: boolean, msg: ServerHandShake): ServerHandShake.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: ServerHandShake, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ServerHandShake;
+  static deserializeBinaryFromReader(message: ServerHandShake, reader: jspb.BinaryReader): ServerHandShake;
+}
+
+export namespace ServerHandShake {
+  export type AsObject = {
+    serverversion: number,
+    token: string,
+  }
+}
+
+export class SignIn extends jspb.Message {
+  getFingerprint(): string;
+  setFingerprint(value: string): void;
+
+  getToken(): string;
+  setToken(value: string): void;
+
+  getSign(): string;
+  setSign(value: string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): SignIn.AsObject;
+  static toObject(includeInstance: boolean, msg: SignIn): SignIn.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: SignIn, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): SignIn;
+  static deserializeBinaryFromReader(message: SignIn, reader: jspb.BinaryReader): SignIn;
+}
+
+export namespace SignIn {
+  export type AsObject = {
+    fingerprint: string,
+    token: string,
+    sign: string,
+  }
+}
+
+export enum ErrorCode {
+  NONE = 0,
+  VERIFYERROR = 1001,
+  INVALIDMESSAGE = 1000,
 }
 
