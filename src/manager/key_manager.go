@@ -2,7 +2,7 @@ package manager
 
 import (
 	// "golang.org/x/crypto/openpgp"
-	"container/list"
+
 	"errors"
 	"lib"
 	"sync"
@@ -12,7 +12,6 @@ import (
 type KeyManager struct {
 	muKeys       sync.Mutex
 	keyLifeCycle *lib.LifeCycleMgr
-	keyList      *list.List
 	mapedKeys    map[string]*user.Key
 	options      KeyManagerOption
 	chAddKey     chan request
@@ -31,9 +30,10 @@ type request struct {
 }
 
 type KeyManagerOption struct {
-	ExpireSeconds int
-	ChannelBuffer int
-	CheckExpire   int
+	DefaultLifeTime int
+	ChannelBuffer   int
+	// Check frequence in seconds
+	CheckInterval int
 }
 
 func (keymgr *KeyManager) getKeyInternal(fingerprint string) *user.Key {
@@ -98,15 +98,16 @@ func CreateKeyManager(option KeyManagerOption) *KeyManager {
 	if option.ChannelBuffer == 0 {
 		option.ChannelBuffer = 100
 	}
-	if option.CheckExpire == 0 {
-		option.CheckExpire = 1
+	if option.CheckInterval == 0 {
+		option.CheckInterval = 1
 	}
-	if option.ExpireSeconds == 0 {
-		option.ExpireSeconds = 300
+	if option.DefaultLifeTime == 0 {
+		option.DefaultLifeTime = 300
 	}
 	keymgr.options = option
+	keymgr.keyLifeCycle = lib.NewLifeCycleMgr(option.ChannelBuffer)
+	keymgr.keyLifeCycle.Start()
 	keymgr.mapedKeys = make(map[string]*user.Key)
-	keymgr.keyList = list.New()
 	keymgr.chAddKey = make(chan request, option.ChannelBuffer)
 	keymgr.chGetKey = make(chan keyQuery, option.ChannelBuffer)
 	keymgr.chRmKey = make(chan string, option.ChannelBuffer)

@@ -11,21 +11,27 @@ const ChannelBufferSize = 100
 
 type TMCSAnonymousServer struct {
 	Active   bool
+	Addr     string
 	tmcs     *TMCSAnonymous
 	upgrader websocket.Upgrader
-	addr     string
 	router   *mux.Router
 	//http     *http.ServeMux
 	server *http.Server
 }
 
-func NewTMCSAnonymousServer(tmcs *TMCSAnonymous, maxBufferSize int) *TMCSAnonymousServer {
+type TMCSAnonymousServerOptions struct {
+	MaxBufferSize int
+	Address       string
+}
+
+func NewTMCSAnonymousServer(tmcs *TMCSAnonymous, options TMCSAnonymousServerOptions) *TMCSAnonymousServer {
 	server := new(TMCSAnonymousServer)
 	server.tmcs = tmcs
 	server.upgrader = websocket.Upgrader{
-		ReadBufferSize:  maxBufferSize,
-		WriteBufferSize: maxBufferSize,
+		ReadBufferSize:  options.MaxBufferSize,
+		WriteBufferSize: options.MaxBufferSize,
 	}
+	server.Addr = options.Address
 	return server
 }
 
@@ -33,7 +39,7 @@ func (server *TMCSAnonymousServer) Start() error {
 	//server.http = http.NewServeMux()
 	server.router = mux.NewRouter()
 	server.server = &http.Server{
-		Addr:    server.addr,
+		Addr:    server.Addr,
 		Handler: server.router,
 	}
 	server.router.HandleFunc("/ws", server.handleWebSocket())
