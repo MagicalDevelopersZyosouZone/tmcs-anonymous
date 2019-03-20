@@ -2,9 +2,8 @@ package tmcs
 
 import (
 	"net/http"
-	"serverlog"
-	"user"
 
+	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
 )
 
@@ -15,8 +14,9 @@ type TMCSAnonymousServer struct {
 	tmcs     *TMCSAnonymous
 	upgrader websocket.Upgrader
 	addr     string
-	http     *http.ServeMux
-	server   *http.Server
+	router   *mux.Router
+	//http     *http.ServeMux
+	server *http.Server
 }
 
 func NewTMCSAnonymousServer(tmcs *TMCSAnonymous, maxBufferSize int) *TMCSAnonymousServer {
@@ -30,28 +30,15 @@ func NewTMCSAnonymousServer(tmcs *TMCSAnonymous, maxBufferSize int) *TMCSAnonymo
 }
 
 func (server *TMCSAnonymousServer) Start() error {
-	server.http = http.NewServeMux()
+	//server.http = http.NewServeMux()
+	server.router = mux.NewRouter()
 	server.server = &http.Server{
 		Addr:    server.addr,
-		Handler: server.http,
+		Handler: server.router,
 	}
-	server.http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
-		conn, err := server.upgrader.Upgrade(w, r, nil)
-		if err != nil {
-			serverlog.Error("Failed when upgrade to WebSocket: ", err.Error())
-			return
-		}
-		session := user.NewSession(conn, ChannelBufferSize)
-		if !session.Start(server.tmcs.KeyLib) {
-			return
-		}
-		origin := server.tmcs.SessionManager.GetSession(session.Key.FingerPrint)
-		if origin != nil {
-			origin.Join(session)
-		} else {
-			server.tmcs.SessionManager.AddSession(session)
-		}
-	})
+	server.router.HandleFunc("/ws", server.handleWebSocket())
+	server.router.HandleFunc("/user/register", server.handleRegister()).Methods("POST")
+	server.router.HandleFunc("/session/join/{sessionId}", server.handleJoin()).Methods("GET")
 	err := server.server.ListenAndServe()
 	if err != nil {
 		return err
