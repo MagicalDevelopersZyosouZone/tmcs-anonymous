@@ -187,7 +187,7 @@ func (session *Session) dispacth(msg *tmcs_msg.SignedMsg) {
 	})
 }
 
-func (session *Session) handshake(keyMgr IKeyManager) bool {
+func (session *Session) handshake(keyLib *lib.ObjectCache) bool {
 	msgType, buffer, err := session.connection.ReadMessage()
 	if err != nil {
 		serverlog.Log("Faild to shake hands with {", session.ID, "}: ", err.Error())
@@ -238,12 +238,13 @@ func (session *Session) handshake(keyMgr IKeyManager) bool {
 		return false
 	}
 
-	pubkey := keyMgr.GetKey(signin.FingerPrint)
-	if pubkey == nil {
+	val, ok := keyLib.Get(signin.FingerPrint)
+	if !ok {
 		session.echo(fmt.Sprint("Public key of '", signin.FingerPrint, "' not found."))
 		session.connection.Close()
 		return false
 	}
+	pubkey := val.(*Key)
 	if !session.verify(pubkey.PublicKey, token, signin.Sign) {
 		session.echo("Signature verification failed.")
 		session.connection.Close()
@@ -266,8 +267,8 @@ func NewSession(connection *websocket.Conn, bufferSize int) *Session {
 	return session
 }
 
-func (session *Session) Start(keyMgr IKeyManager) bool {
-	if session.handshake(keyMgr) {
+func (session *Session) Start(keyLib *lib.ObjectCache) bool {
+	if session.handshake(keyLib) {
 		session.chClose = make(chan int, 2)
 		session.chPost = make(chan *SessionMessage)
 		session.chRecv = make(chan *tmcs_msg.SignedMsg)

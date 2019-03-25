@@ -2,6 +2,7 @@ package tmcs
 
 import (
 	"net/http"
+	"serverlog"
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/websocket"
@@ -15,13 +16,23 @@ type TMCSAnonymousServer struct {
 	tmcs     *TMCSAnonymous
 	upgrader websocket.Upgrader
 	router   *mux.Router
-	//http     *http.ServeMux
-	server *http.Server
+	server   *http.Server
+	chClose  chan int
 }
 
 type TMCSAnonymousServerOptions struct {
 	MaxBufferSize int
 	Address       string
+}
+
+func (server *TMCSAnonymousServer) serverProc() {
+	server.Active = true
+	err := server.server.ListenAndServe()
+	server.Active = false
+	if err != nil {
+		serverlog.Error("Faild to setup http server: ", err.Error())
+	}
+	server.chClose <- 1
 }
 
 func NewTMCSAnonymousServer(tmcs *TMCSAnonymous, options TMCSAnonymousServerOptions) *TMCSAnonymousServer {
@@ -42,14 +53,14 @@ func (server *TMCSAnonymousServer) Start() error {
 		Addr:    server.Addr,
 		Handler: server.router,
 	}
+	server.chClose = make(chan int)
 	server.router.HandleFunc("/ws", server.handleWebSocket())
 	server.router.HandleFunc("/user/register", server.handleRegister()).Methods("POST")
 	server.router.HandleFunc("/session/join/{sessionId}", server.handleJoin()).Methods("GET")
-	err := server.server.ListenAndServe()
-	if err != nil {
-		return err
-	}
-	server.Active = true
+	go server.serverProc()
+	serverlog.Log("Server listened on", server.Addr)
+	<-server.chClose
+	serverlog.Log("Server closed.")
 	return nil
 }
 

@@ -1,14 +1,14 @@
 package tmcs
 
 import (
-	"manager"
+	"lib"
 )
 
 type TMCSAnonymous struct {
-	RegistedKeyManager *manager.KeyManager
-	KeyLib             *manager.KeyManager
-	SessionManager     *manager.SessionManager
-	Server             *TMCSAnonymousServer
+	RegistedKeys *lib.ObjectCache
+	KeysLib      *lib.ObjectCache
+	SessionsLib  *lib.ObjectCache
+	Server       *TMCSAnonymousServer
 }
 
 func NewTMCSAnonymous() *TMCSAnonymous {
@@ -17,17 +17,9 @@ func NewTMCSAnonymous() *TMCSAnonymous {
 		Address:       "localhost:5325",
 		MaxBufferSize: 8192,
 	})
-	tmcs.RegistedKeyManager = manager.CreateKeyManager(manager.KeyManagerOption{
-		ChannelBuffer:   100,
-		DefaultLifeTime: 300,
-		CheckInterval:   1,
-	})
-	tmcs.KeyLib = manager.CreateKeyManager(manager.KeyManagerOption{
-		ChannelBuffer:   100,
-		DefaultLifeTime: 1800,
-		CheckInterval:   1,
-	})
-	tmcs.SessionManager = manager.NewSessionManager(100)
+	tmcs.RegistedKeys = lib.NewObjectCache(100)
+	tmcs.KeysLib = lib.NewObjectCache(100)
+	tmcs.SessionsLib = lib.NewObjectCache(100)
 	return tmcs
 }
 

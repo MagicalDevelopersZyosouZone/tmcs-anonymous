@@ -111,6 +111,7 @@ func CreateKeyManager(option KeyManagerOption) *KeyManager {
 	keymgr.chAddKey = make(chan request, option.ChannelBuffer)
 	keymgr.chGetKey = make(chan keyQuery, option.ChannelBuffer)
 	keymgr.chRmKey = make(chan string, option.ChannelBuffer)
+	go keymgr.manageKeys()
 	return keymgr
 }
 
