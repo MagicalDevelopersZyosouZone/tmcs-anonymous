@@ -9,7 +9,8 @@
     "test": "npx mocha ./www/test/test.js",
     "protoc:go": "cd ./proto && protoc --go_out=../src/tmcs_msg ./tmcs_msg.proto",
     "protoc:js": "protoc --plugin=./node_modules/.bin/protoc-gen-ts --js_out=import_style=commonjs,binary:./www/src --ts_out=./www/src ./proto/tmcs_msg.proto",
-    "protoc": "npm run protoc:js && npm run protoc:go"
+    "protoc:jslib": "protoc --plugin=./node_modules/.bin/protoc-gen-ts --js_out=import_style=commonjs,binary:./www/lib/tmcs-anonymous/src --ts_out=./www/lib/tmcs-anonymous/src ./proto/tmcs_msg.proto",
+    "protoc": "npm run protoc:js && npm run protoc:jslib && npm run protoc:go"
   },
   "keywords": [
     "pgp",

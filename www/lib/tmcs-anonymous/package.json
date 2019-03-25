@@ -1,0 +1,22 @@
+{
+  "name": "tmcs-anonymous",
+  "version": "1.0.0",
+  "description": "Lib for TMCS Anonymous.",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "tmcs",
+    "tmcs-anonymous"
+  ],
+  "author": "mdzz.studio",
+  "license": "GPL-3.0",
+  "devDependencies": {
+    "typescript": "^3.3.4000"
+  },
+  "dependencies": {
+    "@types/openpgp": "^4.4.3",
+    "openpgp": "^4.4.10"
+  }
+}
