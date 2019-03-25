@@ -88,6 +88,7 @@ func (objCache *ObjectCache) Init(chanBuffer int) {
 	objCache.chSet = make(chan CacheRequest, chanBuffer)
 	objCache.chRemove = make(chan CacheRequest, chanBuffer)
 	objCache.elements = list.New()
+	objCache.elementsMap = make(map[string]*CachedElement)
 	objCache.checkInterval = ObjectCacheDefaultCheckInterval
 }
 

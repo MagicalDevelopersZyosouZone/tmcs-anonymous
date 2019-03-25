@@ -24,5 +24,8 @@ func NewTMCSAnonymous() *TMCSAnonymous {
 }
 
 func (tmcs *TMCSAnonymous) Start() {
+	tmcs.RegistedKeys.Start()
+	tmcs.KeysLib.Start()
+	tmcs.SessionsLib.Start()
 	tmcs.Server.Start()
 }

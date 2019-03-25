@@ -2267,7 +2267,8 @@ proto.tmcs_msg.ErrorCode = {
   NONE: 0,
   INVALIDMESSAGE: 1000,
   VERIFYERROR: 1001,
-  RECEIVERUNKNOWN: 1002
+  RECEIVERUNKNOWN: 1002,
+  INVALIDKEY: 1003
 };
 
 goog.object.extend(exports, proto.tmcs_msg);

@@ -81,4 +81,5 @@ enum ErrorCode{
     InvalidMessage = 1000;
     VerifyError = 1001;
     ReceiverUnknown = 1002;
+    InvalidKey = 1003;
 }
