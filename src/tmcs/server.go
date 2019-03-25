@@ -57,8 +57,8 @@ func (server *TMCSAnonymousServer) Start() error {
 	}
 	server.chClose = make(chan int)
 	server.router.HandleFunc("/ws", server.handleWebSocket())
-	server.router.HandleFunc("/user/register", server.handleRegister()).Methods("POST")
-	server.router.HandleFunc("/session/join/{sessionId}", server.handleJoin()).Methods("GET")
+	server.router.HandleFunc("/key/register", server.handleRegister()).Methods("POST")
+	server.router.HandleFunc("/chat/{sessionId}", server.handleJoin()).Methods("GET")
 	server.router.PathPrefix("/").Handler(http.FileServer(http.Dir("../www/dist")))
 	go server.serverProc()
 	serverlog.Log("Server listened on", server.Addr)

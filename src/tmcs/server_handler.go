@@ -11,6 +11,7 @@ import (
 	"tmcs_msg"
 	"user"
 
+	"github.com/gorilla/mux"
 	"golang.org/x/crypto/openpgp"
 )
 
@@ -116,13 +117,14 @@ func (server *TMCSAnonymousServer) handleRegister() func(http.ResponseWriter, *h
 	ReGen:
 		sessionIdBuffer := make([]byte, 6)
 		rand.Read(sessionIdBuffer)
-		sessionId := base64.StdEncoding.EncodeToString(sessionIdBuffer)
+		sessionId := base64.URLEncoding.EncodeToString(sessionIdBuffer)
 		if server.tmcs.RegistedKeys.Has("sessionId:" + sessionId) {
 			goto ReGen
 		}
 
 		server.tmcs.RegistedKeys.Set("sessionId:"+sessionId, key, 300000)
 		server.tmcs.RegistedKeys.Set("key:"+key.FingerPrint, key, 300000)
+		server.tmcs.KeysLib.Set(key.FingerPrint, key, 300000)
 
 		writer.WriteHeader(http.StatusOK)
 		writer.Write((&responseMsg{
@@ -135,8 +137,16 @@ func (server *TMCSAnonymousServer) handleRegister() func(http.ResponseWriter, *h
 
 func (server *TMCSAnonymousServer) handleJoin() func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		//vars := mux.Vars(r)
-		//session := vars["sessionId"]
-
+		vars := mux.Vars(r)
+		session := vars["sessionId"]
+		obj, ok := server.tmcs.RegistedKeys.Get("sessionId:" + session)
+		if !ok {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		key := obj.(*user.Key)
+		server.tmcs.RegistedKeys.Delete("sessionId:" + session)
+		server.tmcs.RegistedKeys.Delete("key:" + key.FingerPrint)
+		http.Redirect(w, r, "/session/join/"+key.FingerPrint, http.StatusSeeOther)
 	}
 }

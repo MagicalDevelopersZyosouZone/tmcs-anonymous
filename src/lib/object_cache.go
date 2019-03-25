@@ -144,7 +144,7 @@ func (cache *ObjectCache) Get(key string) (interface{}, bool) {
 	if !ok {
 		return nil, false
 	}
-	return element, true
+	return element.value, true
 }
 
 func (cache *ObjectCache) Has(key string) bool {

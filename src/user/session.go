@@ -146,7 +146,7 @@ func (session *Session) verify(pubkey openpgp.EntityList, data []byte, sign []by
 	if err != nil {
 		return false
 	}
-	if hex.EncodeToString(signer.PrimaryKey.Fingerprint[0:]) != session.Key.FingerPrint {
+	if bytes.Compare(signer.PrimaryKey.Fingerprint[0:], pubkey[0].PrimaryKey.Fingerprint[0:]) != 0 {
 		return false
 	}
 	return true
@@ -206,7 +206,7 @@ func (session *Session) handshake(keyLib *lib.ObjectCache) bool {
 		session.connection.Close()
 		return false
 	}
-	token := make([]byte, 128)
+	token := make([]byte, 16)
 	rand.Read(token)
 	buffer, _ = proto.Marshal(&tmcs_msg.ServerHandShake{
 		ServerVersion: version.Version,
@@ -251,6 +251,17 @@ func (session *Session) handshake(keyLib *lib.ObjectCache) bool {
 		return false
 	}
 	session.Key = pubkey
+	buffer, _ = proto.Marshal(&tmcs_msg.ServerHandShake{
+		ServerVersion: version.Version,
+		Token:         hex.EncodeToString(token),
+	})
+	err = session.connection.WriteMessage(websocket.BinaryMessage, buffer)
+	if err != nil {
+		serverlog.Log("Cannot send handshake to session {", session.ID, "}: ", err.Error())
+		session.connection.Close()
+		return false
+	}
+	serverlog.Log("A session connected with fingerprint {", pubkey.FingerPrint, "}.")
 	return true
 }
 
