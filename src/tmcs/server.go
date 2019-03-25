@@ -17,6 +17,8 @@ type TMCSAnonymousServer struct {
 	upgrader websocket.Upgrader
 	router   *mux.Router
 	server   *http.Server
+	fs       http.Handler
+	fsRouter *mux.Router
 	chClose  chan int
 }
 
@@ -57,6 +59,7 @@ func (server *TMCSAnonymousServer) Start() error {
 	server.router.HandleFunc("/ws", server.handleWebSocket())
 	server.router.HandleFunc("/user/register", server.handleRegister()).Methods("POST")
 	server.router.HandleFunc("/session/join/{sessionId}", server.handleJoin()).Methods("GET")
+	server.router.PathPrefix("/").Handler(http.FileServer(http.Dir("../www/dist")))
 	go server.serverProc()
 	serverlog.Log("Server listened on", server.Addr)
 	<-server.chClose
