@@ -85,11 +85,11 @@ func (server *TMCSAnonymousServer) handleRegister() func(http.ResponseWriter, *h
 		pubkey := keyring[0]
 
 		fingerprint := hex.EncodeToString(pubkey.PrimaryKey.Fingerprint[0:])
-		if server.tmcs.RegistedKeys.Has("key:" + fingerprint) {
+		if server.tmcs.KeysLib.Has(fingerprint) {
 			writer.WriteHeader(http.StatusForbidden)
 			writer.Write((&responseMsg{
 				Error: tmcs_msg.ErrorCode_InvalidKey,
-				Msg:   "Invalid key",
+				Msg:   "Duplicate key",
 			}).ToJSON())
 			return
 		}
@@ -118,12 +118,11 @@ func (server *TMCSAnonymousServer) handleRegister() func(http.ResponseWriter, *h
 		sessionIdBuffer := make([]byte, 6)
 		rand.Read(sessionIdBuffer)
 		sessionId := base64.URLEncoding.EncodeToString(sessionIdBuffer)
-		if server.tmcs.RegistedKeys.Has("sessionId:" + sessionId) {
+		if server.tmcs.RegistedKeys.Has(sessionId) {
 			goto ReGen
 		}
 
-		server.tmcs.RegistedKeys.Set("sessionId:"+sessionId, key, 300000)
-		server.tmcs.RegistedKeys.Set("key:"+key.FingerPrint, key, 300000)
+		server.tmcs.RegistedKeys.Set(sessionId, key, 300000)
 		server.tmcs.KeysLib.Set(key.FingerPrint, key, 300000)
 
 		writer.WriteHeader(http.StatusOK)
@@ -139,14 +138,13 @@ func (server *TMCSAnonymousServer) handleJoin() func(http.ResponseWriter, *http.
 	return func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		session := vars["sessionId"]
-		obj, ok := server.tmcs.RegistedKeys.Get("sessionId:" + session)
+		obj, ok := server.tmcs.RegistedKeys.Get(session)
 		if !ok {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
 		key := obj.(*user.Key)
-		server.tmcs.RegistedKeys.Delete("sessionId:" + session)
-		server.tmcs.RegistedKeys.Delete("key:" + key.FingerPrint)
+		server.tmcs.RegistedKeys.Delete(session)
 		http.Redirect(w, r, "/session/join/"+key.FingerPrint, http.StatusSeeOther)
 	}
 }
