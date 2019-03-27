@@ -2,6 +2,7 @@ package tmcs
 
 import (
 	"net/http"
+	"regexp"
 	"serverlog"
 
 	"github.com/gorilla/mux"
@@ -11,15 +12,16 @@ import (
 const ChannelBufferSize = 100
 
 type TMCSAnonymousServer struct {
-	Active   bool
-	Addr     string
-	tmcs     *TMCSAnonymous
-	upgrader websocket.Upgrader
-	router   *mux.Router
-	server   *http.Server
-	fs       http.Handler
-	fsRouter *mux.Router
-	chClose  chan int
+	Active       bool
+	Addr         string
+	tmcs         *TMCSAnonymous
+	upgrader     websocket.Upgrader
+	router       *mux.Router
+	server       *http.Server
+	sessionRegex *regexp.Regexp
+	fs           http.Handler
+	fsRouter     *mux.Router
+	chClose      chan int
 }
 
 type TMCSAnonymousServerOptions struct {
@@ -56,9 +58,13 @@ func (server *TMCSAnonymousServer) Start() error {
 		Handler: server.router,
 	}
 	server.chClose = make(chan int)
+	server.fs = http.FileServer(http.Dir("../www/dist"))
+	server.sessionRegex = regexp.MustCompile(`^.*session/[0-9a-fA-F]+(/.*)?$`)
 	server.router.HandleFunc("/ws", server.handleWebSocket())
 	server.router.HandleFunc("/key/register", server.handleRegister()).Methods("POST")
 	server.router.HandleFunc("/chat/{sessionId}", server.handleJoin()).Methods("GET")
+	server.router.HandleFunc("/session/{fingerprint}/register", server.handleSessionRegister).Methods("POST")
+	server.router.PathPrefix("/session/{fingerprint}").HandlerFunc(server.handleSessionJoin())
 	server.router.PathPrefix("/").Handler(http.FileServer(http.Dir("../www/dist")))
 	go server.serverProc()
 	serverlog.Log("Server listened on", server.Addr)
