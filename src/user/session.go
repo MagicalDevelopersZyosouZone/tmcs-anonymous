@@ -169,7 +169,7 @@ func (session *Session) echo(text string) {
 }
 
 func (session *Session) dispacth(msg *tmcs_msg.SignedMsg) {
-	receiver, ok := session.User.Contacs[msg.Receiver]
+	receiver, ok := session.User.Contacts[msg.Receiver]
 	if !ok {
 		session.Post(&SessionMessage{
 			Sender:   nil,

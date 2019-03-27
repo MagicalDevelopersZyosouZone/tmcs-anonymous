@@ -47,7 +47,7 @@ class TMCSAnonymous {
                 this.prvKey = (yield openpgp.key.readArmored(prvkeyArmored)).keys[0];
         });
     }
-    generateKey(options) {
+    generateKey(options = {}) {
         return __awaiter(this, void 0, void 0, function* () {
             options.bits = options.bits || 2048;
             options.name = options.name || "Anonymous";
@@ -64,6 +64,7 @@ class TMCSAnonymous {
     registerKey() {
         return __awaiter(this, void 0, void 0, function* () {
             const registerParam = {
+                name: "Anonymous",
                 pubkey: this.pubkey.armor(),
                 sign: openpgp.util.Uint8Array_to_b64(yield this.sign(openpgp.util.hex_to_Uint8Array(this.pubkey.getFingerprint()))),
             };
@@ -78,9 +79,8 @@ class TMCSAnonymous {
             if (result.error != tmcs_msg_pb_1.default.ErrorCode.NONE) {
                 throw new Error(result.msg);
             }
-            this.inviteLink = `${this.httpBaseAddr}/chat/${result.data}`;
             this.state = "registed";
-            return this.inviteLink;
+            return `${this.httpBaseAddr}/chat/${result.data}`;
         });
     }
     sign(buffer) {

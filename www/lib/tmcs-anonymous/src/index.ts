@@ -9,6 +9,7 @@ interface KeyOptions
 }
 interface RegisterParam
 {
+    name: string;
     pubkey: string;
     sign: string;
 }
@@ -24,7 +25,6 @@ export default class TMCSAnonymous
     useSSL: boolean;
     pubkey: openpgp.key.Key;
     prvKey: openpgp.key.Key;
-    inviteLink: string;
     websocket: WebSocket;
     state: "none" | "registed" | "pending" | "ready" | "disconnected" = "none";
     timeout: 3000;
@@ -54,7 +54,7 @@ export default class TMCSAnonymous
         if (prvkeyArmored)
             this.prvKey = (await openpgp.key.readArmored(prvkeyArmored)).keys[0];
     }
-    async generateKey(options:KeyOptions)
+    async generateKey(options: KeyOptions = {})
     {
         options.bits = options.bits || 2048;
         options.name = options.name || "Anonymous";
@@ -69,7 +69,8 @@ export default class TMCSAnonymous
     }
     async registerKey()
     {
-        const registerParam:RegisterParam = {
+        const registerParam: RegisterParam = {
+            name: "Anonymous",
             pubkey: this.pubkey.armor(),
             sign: openpgp.util.Uint8Array_to_b64(await this.sign(openpgp.util.hex_to_Uint8Array(this.pubkey.getFingerprint()))),
         }
@@ -85,9 +86,8 @@ export default class TMCSAnonymous
         {
             throw new Error(result.msg);
         }
-        this.inviteLink = `${this.httpBaseAddr}/chat/${result.data}`;
         this.state = "registed";
-        return this.inviteLink;
+        return `${this.httpBaseAddr}/chat/${result.data}`;
     }
     async sign(buffer: Uint8Array)
     {

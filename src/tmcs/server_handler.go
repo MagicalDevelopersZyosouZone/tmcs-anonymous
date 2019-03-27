@@ -25,7 +25,7 @@ type signUpMsg struct {
 type responseMsg struct {
 	Error tmcs_msg.ErrorCode
 	Msg   string
-	Data  string
+	Data  interface{}
 }
 
 const keyExpire = 300000
@@ -187,7 +187,7 @@ func (server *TMCSAnonymousServer) handleSessionJoin() func(http.ResponseWriter,
 func (server *TMCSAnonymousServer) handleSessionRegister(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	fingerprint := vars["fingerprint"]
-	_, ok := server.tmcs.Users.Get(fingerprint)
+	contact, ok := server.tmcs.Users.Get(fingerprint)
 	if !ok {
 		server.errorHandler(w, r, http.StatusNotFound)
 		return
@@ -197,6 +197,26 @@ func (server *TMCSAnonymousServer) handleSessionRegister(w http.ResponseWriter, 
 	if usr == nil {
 		return
 	}
+
+	ok = (contact.(*user.User)).AddContact(usr)
+	if !ok {
+		w.WriteHeader(http.StatusForbidden)
+		w.Write((&responseMsg{
+			Error: tmcs_msg.ErrorCode_VerifyError,
+			Msg:   "Failed to add contact",
+		}).ToJSON())
+		return
+	}
+	ok = usr.AddContact(contact.(*user.User))
+	if !ok {
+		w.WriteHeader(http.StatusForbidden)
+		w.Write((&responseMsg{
+			Error: tmcs_msg.ErrorCode_VerifyError,
+			Msg:   "Failed to add contact",
+		}).ToJSON())
+		return
+	}
+
 	server.tmcs.Users.Set(usr.Key.FingerPrint, usr, keyExpire)
 
 	w.WriteHeader(http.StatusOK)
