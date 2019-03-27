@@ -2,10 +2,10 @@ package user
 
 import (
 	"bytes"
+	"cache"
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
-	"lib"
 	"serverlog"
 	"time"
 	"tmcs_msg"
@@ -22,23 +22,21 @@ import (
 const SessionRenewTime = 1800
 
 type SessionMessage struct {
-	Sender   *Session
-	Receiver *Session
+	Sender   *User
+	Receiver *User
 	Msg      *tmcs_msg.SignedMsg
 }
 
 type Session struct {
-	Key              *Key
-	Connected        bool
-	ID               string
-	LifeCycleElement *lib.LifeCycleElement
-	contacts         map[string]*Session
-	lastActive       time.Time
-	connection       *websocket.Conn
-	bufferSize       int
-	chPost           chan *SessionMessage
-	chRecv           chan *tmcs_msg.SignedMsg
-	chClose          chan int
+	User       *User
+	Connected  bool
+	ID         string
+	lastActive time.Time
+	connection *websocket.Conn
+	bufferSize int
+	chPost     chan *SessionMessage
+	chRecv     chan *tmcs_msg.SignedMsg
+	chClose    chan int
 }
 
 type IKeyManager interface {
@@ -55,7 +53,7 @@ func (session *Session) recv() {
 		default:
 			msgType, buffer, err := session.connection.ReadMessage()
 			if err != nil {
-				serverlog.Error("Failed to receive from <", session.Key.FingerPrint, ">: ", err.Error())
+				serverlog.Error("Failed to receive from <", session.User.Key.FingerPrint, ">: ", err.Error())
 				session.Close()
 				continue
 			}
@@ -69,24 +67,24 @@ func (session *Session) recv() {
 			if err != nil {
 				session.Post(&SessionMessage{
 					Sender:   nil,
-					Receiver: session,
+					Receiver: session.User,
 					Msg:      session.errorMessage(tmcs_msg.ErrorCode_InvalidMessage, "Invalid message.", fmt.Sprint(msg.Id)),
 				})
-				serverlog.Warn("Invalid message from <", session.Key.FingerPrint, ">.")
+				serverlog.Warn("Invalid message from <", session.User.Key.FingerPrint, ">.")
 				continue
 			}
 			if !session.verifyMsg(msg) {
 				session.Post(&SessionMessage{
 					Sender:   nil,
-					Receiver: session,
+					Receiver: session.User,
 					Msg:      session.errorMessage(tmcs_msg.ErrorCode_VerifyError, "Signature verification fail.", fmt.Sprint(msg.Id)),
 				})
-				serverlog.Warn("Signature verify failed from <", session.Key.FingerPrint, ">.")
+				serverlog.Warn("Signature verify failed from <", session.User.Key.FingerPrint, ">.")
 				continue
 			}
 			session.dispacth(msg)
 			session.lastActive = time.Now()
-			session.LifeCycleElement.Renew(SessionRenewTime)
+			session.User.Renew()
 		}
 
 	}
@@ -117,7 +115,7 @@ func (session *Session) send() {
 			}
 			session.connection.WriteMessage(websocket.BinaryMessage, buffer)
 			session.lastActive = time.Now()
-			session.LifeCycleElement.Renew(SessionRenewTime)
+			session.User.Renew()
 		}
 	}
 }
@@ -135,7 +133,7 @@ func (session *Session) errorMessage(code tmcs_msg.ErrorCode, msg, data string) 
 	return &tmcs_msg.SignedMsg{
 		Id:       0,
 		Sender:   "",
-		Receiver: session.Key.FingerPrint,
+		Receiver: session.User.Key.FingerPrint,
 		Type:     tmcs_msg.SignedMsg_Error,
 		Body:     buffer,
 	}
@@ -153,11 +151,11 @@ func (session *Session) verify(pubkey openpgp.EntityList, data []byte, sign []by
 }
 
 func (session *Session) verifyMsg(msg *tmcs_msg.SignedMsg) bool {
-	signer, err := openpgp.CheckDetachedSignature(session.Key.PublicKey, bytes.NewBuffer(msg.Body), bytes.NewBuffer(msg.Sign))
+	signer, err := openpgp.CheckDetachedSignature(session.User.Key.PublicKey, bytes.NewBuffer(msg.Body), bytes.NewBuffer(msg.Sign))
 	if err != nil {
 		return false
 	}
-	if hex.EncodeToString(signer.PrimaryKey.Fingerprint[0:]) != session.Key.FingerPrint {
+	if hex.EncodeToString(signer.PrimaryKey.Fingerprint[0:]) != session.User.Key.FingerPrint {
 		return false
 	}
 	return true
@@ -171,23 +169,23 @@ func (session *Session) echo(text string) {
 }
 
 func (session *Session) dispacth(msg *tmcs_msg.SignedMsg) {
-	receiver, ok := session.contacts[msg.Receiver]
+	receiver, ok := session.User.Contacs[msg.Receiver]
 	if !ok {
 		session.Post(&SessionMessage{
 			Sender:   nil,
-			Receiver: session,
-			Msg:      session.errorMessage(tmcs_msg.ErrorCode_ReceiverUnknown, "Receiver unknown.", fmt.Sprint(msg.Id)),
+			Receiver: session.User,
+			Msg:      session.errorMessage(tmcs_msg.ErrorCode_ReceiverUnknown, "Unknown receiver", fmt.Sprint(msg.Id)),
 		})
 		return
 	}
-	receiver.Post(&SessionMessage{
-		Sender:   session,
+	receiver.Session.Post(&SessionMessage{
+		Sender:   session.User,
 		Receiver: receiver,
 		Msg:      msg,
 	})
 }
 
-func (session *Session) handshake(keyLib *lib.ObjectCache) bool {
+func (session *Session) handshake(usersLib *cache.ObjectCache) bool {
 	msgType, buffer, err := session.connection.ReadMessage()
 	if err != nil {
 		serverlog.Log("Faild to shake hands with {", session.ID, "}: ", err.Error())
@@ -238,19 +236,19 @@ func (session *Session) handshake(keyLib *lib.ObjectCache) bool {
 		return false
 	}
 
-	val, ok := keyLib.Get(signin.FingerPrint)
+	val, ok := usersLib.Get(signin.FingerPrint)
 	if !ok {
 		session.echo(fmt.Sprint("Public key of '", signin.FingerPrint, "' not found."))
 		session.connection.Close()
 		return false
 	}
-	pubkey := val.(*Key)
-	if !session.verify(pubkey.PublicKey, token, signin.Sign) {
+	user := val.(*User)
+	if !session.verify(user.Key.PublicKey, token, signin.Sign) {
 		session.echo("Signature verification failed.")
 		session.connection.Close()
 		return false
 	}
-	session.Key = pubkey
+	session.User = user
 	buffer, _ = proto.Marshal(&tmcs_msg.ServerHandShake{
 		ServerVersion: version.Version,
 		Token:         hex.EncodeToString(token),
@@ -261,24 +259,23 @@ func (session *Session) handshake(keyLib *lib.ObjectCache) bool {
 		session.connection.Close()
 		return false
 	}
-	serverlog.Log("A session connected with fingerprint {", pubkey.FingerPrint, "}.")
+	serverlog.Log("A session connected with fingerprint {", user.Key.FingerPrint, "}.")
 	return true
 }
 
 func NewSession(connection *websocket.Conn, bufferSize int) *Session {
 	session := &Session{
 		ID:         uuid.New().String(),
-		Key:        nil,
+		User:       nil,
 		Connected:  false,
 		lastActive: time.Now(),
-		contacts:   make(map[string]*Session),
 		connection: connection,
 		bufferSize: bufferSize,
 	}
 	return session
 }
 
-func (session *Session) Start(keyLib *lib.ObjectCache) bool {
+func (session *Session) Start(keyLib *cache.ObjectCache) bool {
 	if session.handshake(keyLib) {
 		session.chClose = make(chan int, 2)
 		session.chPost = make(chan *SessionMessage)

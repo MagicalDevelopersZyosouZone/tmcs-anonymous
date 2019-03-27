@@ -17,6 +17,7 @@ import (
 )
 
 type signUpMsg struct {
+	Name   string "name"
 	Pubkey string "pubkey"
 	Sign   string "sign"
 }
@@ -41,7 +42,7 @@ func (msg *responseMsg) ToJSON() []byte {
 	return data
 }
 
-func (server *TMCSAnonymousServer) tryRegister(w http.ResponseWriter, r *http.Request) *user.Key {
+func (server *TMCSAnonymousServer) tryRegister(w http.ResponseWriter, r *http.Request) *user.User {
 	msg := new(signUpMsg)
 	err := json.NewDecoder(r.Body).Decode(msg)
 	if err != nil {
@@ -66,7 +67,7 @@ func (server *TMCSAnonymousServer) tryRegister(w http.ResponseWriter, r *http.Re
 	pubkey := keyring[0]
 
 	fingerprint := hex.EncodeToString(pubkey.PrimaryKey.Fingerprint[0:])
-	if server.tmcs.KeysLib.Has(fingerprint) {
+	if server.tmcs.Users.Has(fingerprint) {
 		w.WriteHeader(http.StatusForbidden)
 		w.Write((&responseMsg{
 			Error: tmcs_msg.ErrorCode_InvalidKey,
@@ -94,7 +95,7 @@ func (server *TMCSAnonymousServer) tryRegister(w http.ResponseWriter, r *http.Re
 	keyBuffer := bytes.NewBuffer(nil)
 	pubkey.Serialize(keyBuffer)
 	key, err := user.NewKey(keyBuffer.Bytes(), keyExpire)
-	return key
+	return user.NewUser(msg.Name, key)
 }
 
 func (server *TMCSAnonymousServer) handleWebSocket() func(http.ResponseWriter, *http.Request) {
@@ -105,22 +106,22 @@ func (server *TMCSAnonymousServer) handleWebSocket() func(http.ResponseWriter, *
 			return
 		}
 		session := user.NewSession(conn, ChannelBufferSize)
-		if !session.Start(server.tmcs.KeysLib) {
+		if !session.Start(server.tmcs.Users) {
 			return
 		}
-		origin, ok := server.tmcs.SessionsLib.Get(session.Key.FingerPrint)
+		userObj, ok := server.tmcs.Users.Get(session.User.Key.FingerPrint)
 		if ok {
-			(origin.(*user.Session)).Join(session)
+			(userObj.(*user.User)).Session.Join(session)
 		} else {
-			server.tmcs.SessionsLib.Set(session.Key.FingerPrint, session, keyExpire)
+			(userObj.(*user.User)).Session = session
 		}
 	}
 }
 
 func (server *TMCSAnonymousServer) handleRegister() func(http.ResponseWriter, *http.Request) {
 	return func(writer http.ResponseWriter, request *http.Request) {
-		key := server.tryRegister(writer, request)
-		if key == nil {
+		usr := server.tryRegister(writer, request)
+		if usr == nil {
 			return
 		}
 
@@ -132,8 +133,8 @@ func (server *TMCSAnonymousServer) handleRegister() func(http.ResponseWriter, *h
 			goto ReGen
 		}
 
-		server.tmcs.RegistedKeys.Set(sessionId, key, keyExpire)
-		server.tmcs.KeysLib.Set(key.FingerPrint, key, keyExpire)
+		server.tmcs.RegistedKeys.Set(sessionId, usr.Key, keyExpire)
+		server.tmcs.Users.Set(usr.Key.FingerPrint, usr, keyExpire)
 
 		writer.WriteHeader(http.StatusOK)
 		writer.Write((&responseMsg{
@@ -164,7 +165,7 @@ func (server *TMCSAnonymousServer) handleSessionJoin() func(http.ResponseWriter,
 
 		vars := mux.Vars(r)
 		fingerprint := vars["fingerprint"]
-		_, ok := server.tmcs.KeysLib.Get(fingerprint)
+		_, ok := server.tmcs.Users.Get(fingerprint)
 		if !ok {
 			server.errorHandler(w, r, http.StatusNotFound)
 			return
@@ -186,23 +187,23 @@ func (server *TMCSAnonymousServer) handleSessionJoin() func(http.ResponseWriter,
 func (server *TMCSAnonymousServer) handleSessionRegister(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	fingerprint := vars["fingerprint"]
-	_, ok := server.tmcs.KeysLib.Get(fingerprint)
+	_, ok := server.tmcs.Users.Get(fingerprint)
 	if !ok {
 		server.errorHandler(w, r, http.StatusNotFound)
 		return
 	}
 
-	key := server.tryRegister(w, r)
-	if key == nil {
+	usr := server.tryRegister(w, r)
+	if usr == nil {
 		return
 	}
-	server.tmcs.KeysLib.Set(key.FingerPrint, key, keyExpire)
+	server.tmcs.Users.Set(usr.Key.FingerPrint, usr, keyExpire)
 
 	w.WriteHeader(http.StatusOK)
 	w.Write((&responseMsg{
 		Error: tmcs_msg.ErrorCode_None,
 		Msg:   "",
-		Data:  key.FingerPrint,
+		Data:  usr.Key.FingerPrint,
 	}).ToJSON())
 }
 

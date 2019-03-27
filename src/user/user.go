@@ -1,18 +1,23 @@
 package user
 
 type User struct {
-	Name string
-	Key  *Key
+	Name    string
+	Contacs map[string]*User
+	Key     *Key
+	Renew   func()
+	Session *Session
 }
 
-func NewUser(name string, keydata []byte, lifetime int64) (*User, error) {
+func NewUser(name string, key *Key) *User {
 	user := new(User)
 	user.Name = name
-	key, err := NewKey(keydata, lifetime)
-	if err != nil {
-		return nil, err
-	}
-	user.Key = key
+	/*
+		key, err := NewKey(keydata, lifetime)
+		if err != nil {
+			return nil, err
+		}
+		user.Key = key*/
 	key.User = user
-	return user, nil
+	user.Key = key
+	return user
 }

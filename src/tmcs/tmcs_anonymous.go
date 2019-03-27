@@ -1,13 +1,12 @@
 package tmcs
 
 import (
-	"lib"
+	"cache"
 )
 
 type TMCSAnonymous struct {
-	RegistedKeys *lib.ObjectCache
-	KeysLib      *lib.ObjectCache
-	SessionsLib  *lib.ObjectCache
+	RegistedKeys *cache.ObjectCache
+	Users        *cache.ObjectCache
 	Server       *TMCSAnonymousServer
 }
 
@@ -17,15 +16,13 @@ func NewTMCSAnonymous() *TMCSAnonymous {
 		Address:       "localhost:5325",
 		MaxBufferSize: 8192,
 	})
-	tmcs.RegistedKeys = lib.NewObjectCache(100)
-	tmcs.KeysLib = lib.NewObjectCache(100)
-	tmcs.SessionsLib = lib.NewObjectCache(100)
+	tmcs.RegistedKeys = cache.NewObjectCache(100)
+	tmcs.Users = cache.NewObjectCache(100)
 	return tmcs
 }
 
 func (tmcs *TMCSAnonymous) Start() {
 	tmcs.RegistedKeys.Start()
-	tmcs.KeysLib.Start()
-	tmcs.SessionsLib.Start()
+	tmcs.Users.Start()
 	tmcs.Server.Start()
 }
