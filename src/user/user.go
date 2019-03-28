@@ -7,6 +7,7 @@ type User struct {
 	Key          *Key
 	Renew        func()
 	Session      *Session
+	chPost       chan *SessionMessage
 }
 
 func NewUser(name string, key *Key) *User {
@@ -16,6 +17,7 @@ func NewUser(name string, key *Key) *User {
 	key.User = user
 	user.Key = key
 	user.ContactLimit = 1
+	user.chPost = make(chan *SessionMessage, 100)
 	return user
 }
 
@@ -33,4 +35,13 @@ func (user *User) GetContect(fingerprint string) *User {
 		return nil
 	}
 	return contact
+}
+
+func (user *User) Post(msg *SessionMessage) bool {
+	select {
+	case user.chPost <- msg:
+		return true
+	default:
+		return false
+	}
 }

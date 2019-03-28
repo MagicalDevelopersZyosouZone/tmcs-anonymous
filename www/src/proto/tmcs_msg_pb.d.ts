@@ -78,6 +78,8 @@ export namespace SignedMsg {
     MESSAGE = 0,
     RECEIPT = 1,
     ERROR = 2,
+    NOTIFICATION = 4,
+    RPC = 8,
   }
 }
 
@@ -100,34 +102,6 @@ export class MessagePack extends jspb.Message {
 export namespace MessagePack {
   export type AsObject = {
     msgList: Array<Message.AsObject>,
-  }
-}
-
-export class MsgPackage extends jspb.Message {
-  clearReceiptsList(): void;
-  getReceiptsList(): Array<MsgReceipt>;
-  setReceiptsList(value: Array<MsgReceipt>): void;
-  addReceipts(value?: MsgReceipt, index?: number): MsgReceipt;
-
-  clearMessagesList(): void;
-  getMessagesList(): Array<Message>;
-  setMessagesList(value: Array<Message>): void;
-  addMessages(value?: Message, index?: number): Message;
-
-  serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): MsgPackage.AsObject;
-  static toObject(includeInstance: boolean, msg: MsgPackage): MsgPackage.AsObject;
-  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
-  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
-  static serializeBinaryToWriter(message: MsgPackage, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): MsgPackage;
-  static deserializeBinaryFromReader(message: MsgPackage, reader: jspb.BinaryReader): MsgPackage;
-}
-
-export namespace MsgPackage {
-  export type AsObject = {
-    receiptsList: Array<MsgReceipt.AsObject>,
-    messagesList: Array<Message.AsObject>,
   }
 }
 
@@ -246,6 +220,34 @@ export namespace Error {
   }
 }
 
+export class Notification extends jspb.Message {
+  getCode(): NotifyCode;
+  setCode(value: NotifyCode): void;
+
+  getMessage(): string;
+  setMessage(value: string): void;
+
+  getData(): string;
+  setData(value: string): void;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): Notification.AsObject;
+  static toObject(includeInstance: boolean, msg: Notification): Notification.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
+  static serializeBinaryToWriter(message: Notification, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): Notification;
+  static deserializeBinaryFromReader(message: Notification, reader: jspb.BinaryReader): Notification;
+}
+
+export namespace Notification {
+  export type AsObject = {
+    code: NotifyCode,
+    message: string,
+    data: string,
+  }
+}
+
 export class ClientHandShake extends jspb.Message {
   getClientversion(): number;
   setClientversion(value: number): void;
@@ -323,8 +325,18 @@ export namespace SignIn {
 export enum ErrorCode {
   NONE = 0,
   INVALIDMESSAGE = 1000,
-  VERIFYERROR = 1001,
+  MESSAGENOTDELIVERED = 1001,
   RECEIVERUNKNOWN = 1002,
-  INVALIDKEY = 1003,
+  VERIFYERROR = 1003,
+  INVALIDKEY = 1004,
+}
+
+export enum NotifyCode {
+  PING = 0,
+  PONG = 1,
+  LINKCLICKED = 2000,
+  CONTACTREQUEST = 2001,
+  CONTACTONLINE = 2002,
+  CONTACTOFFLINE = 2003,
 }
 

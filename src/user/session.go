@@ -34,8 +34,6 @@ type Session struct {
 	lastActive time.Time
 	connection *websocket.Conn
 	bufferSize int
-	chPost     chan *SessionMessage
-	chRecv     chan *tmcs_msg.SignedMsg
 	chClose    chan int
 }
 
@@ -65,7 +63,7 @@ func (session *Session) recv() {
 			msg := new(tmcs_msg.SignedMsg)
 			err = proto.Unmarshal(buffer, msg)
 			if err != nil {
-				session.Post(&SessionMessage{
+				session.User.Post(&SessionMessage{
 					Sender:   nil,
 					Receiver: session.User,
 					Msg:      session.errorMessage(tmcs_msg.ErrorCode_InvalidMessage, "Invalid message.", fmt.Sprint(msg.Id)),
@@ -74,7 +72,7 @@ func (session *Session) recv() {
 				continue
 			}
 			if !session.verifyMsg(msg) {
-				session.Post(&SessionMessage{
+				session.User.Post(&SessionMessage{
 					Sender:   nil,
 					Receiver: session.User,
 					Msg:      session.errorMessage(tmcs_msg.ErrorCode_VerifyError, "Signature verification fail.", fmt.Sprint(msg.Id)),
@@ -95,7 +93,7 @@ func (session *Session) send() {
 		select {
 		case <-session.chClose:
 			return
-		case msg, ok := <-session.chPost:
+		case msg, ok := <-session.User.chPost:
 			if !ok {
 				serverlog.Error("Unexpected channel closing in session {", session.ID, "}.")
 				session.Close()
@@ -171,18 +169,26 @@ func (session *Session) echo(text string) {
 func (session *Session) dispacth(msg *tmcs_msg.SignedMsg) {
 	receiver, ok := session.User.Contacts[msg.Receiver]
 	if !ok {
-		session.Post(&SessionMessage{
+		session.User.Post(&SessionMessage{
 			Sender:   nil,
 			Receiver: session.User,
 			Msg:      session.errorMessage(tmcs_msg.ErrorCode_ReceiverUnknown, "Unknown receiver", fmt.Sprint(msg.Id)),
 		})
 		return
 	}
-	receiver.Session.Post(&SessionMessage{
+	ok = receiver.Post(&SessionMessage{
 		Sender:   session.User,
 		Receiver: receiver,
 		Msg:      msg,
 	})
+	if !ok {
+		session.User.Post(&SessionMessage{
+			Sender:   nil,
+			Receiver: session.User,
+			Msg:      session.errorMessage(tmcs_msg.ErrorCode_MessageNotDelivered, "Message not delivered", fmt.Sprint(msg.Id)),
+		})
+		return
+	}
 }
 
 func (session *Session) handshake(usersLib *cache.ObjectCache) bool {
@@ -278,8 +284,6 @@ func NewSession(connection *websocket.Conn, bufferSize int) *Session {
 func (session *Session) Start(keyLib *cache.ObjectCache) bool {
 	if session.handshake(keyLib) {
 		session.chClose = make(chan int, 2)
-		session.chPost = make(chan *SessionMessage)
-		session.chRecv = make(chan *tmcs_msg.SignedMsg)
 		go session.recv()
 		go session.send()
 		return true
@@ -291,8 +295,6 @@ func (session *Session) Join(origin *Session) {
 	session.Close()
 	session.connection = origin.connection
 	session.chClose = make(chan int, 2)
-	session.chPost = make(chan *SessionMessage)
-	session.chRecv = make(chan *tmcs_msg.SignedMsg)
 	go session.recv()
 	go session.send()
 }
@@ -309,10 +311,4 @@ func (session *Session) Close() {
 }
 
 func (session *Session) Dispose() {
-	close(session.chPost)
-	close(session.chRecv)
-}
-
-func (session *Session) Post(msg *SessionMessage) {
-	session.chPost <- msg
 }
