@@ -7,10 +7,7 @@
     "build": "npx webpack",
     "build:watch": "npx webpack -w --mode development",
     "test": "npx mocha ./www/test/test.js",
-    "protoc:go": "cd ./proto && protoc --go_out=../src/tmcs_msg ./tmcs_msg.proto",
-    "protoc:js": "protoc --plugin=./node_modules/.bin/protoc-gen-ts --js_out=import_style=commonjs,binary:./www/src --ts_out=./www/src ./proto/tmcs_msg.proto",
-    "protoc:jslib": "protoc --plugin=./node_modules/.bin/protoc-gen-ts --js_out=import_style=commonjs,binary:./www/lib/tmcs-anonymous/src --ts_out=./www/lib/tmcs-anonymous/src ./proto/tmcs_msg.proto",
-    "protoc": "npm run protoc:js && npm run protoc:jslib && npm run protoc:go"
+    "protoc": "cd www/lib/tmcs-proto && npm run protoc:go && cp -r ./go/ ../../../src/tmcs_msg/"
   },
   "keywords": [
     "pgp",
@@ -37,6 +34,8 @@
     "google-protobuf": "^3.7.0",
     "linq": "^3.1.1",
     "node-fetch": "^2.3.0",
-    "openpgp": "^4.4.10"
+    "openpgp": "^4.4.10",
+    "tmcs-proto": "./www/lib/tmcs-proto",
+    "tmcs-anonymous": "./www/lib/tmcs-anonymous"
   }
 }

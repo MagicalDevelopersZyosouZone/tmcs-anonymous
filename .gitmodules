@@ -1,0 +1,3 @@
+[submodule "www/lib/tmcs-proto"]
+	path = www/lib/tmcs-proto
+	url = https://github.com/MagicalDevelopersZyosouZone/tmcs-proto.git

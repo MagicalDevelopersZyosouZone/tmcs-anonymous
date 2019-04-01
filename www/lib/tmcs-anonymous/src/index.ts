@@ -1,5 +1,5 @@
 import * as openpgp from "openpgp";
-import tmcs_msg from "./proto/tmcs_msg_pb";
+import tmcs_msg from "tmcs-proto";
 import { waitWebsocketOpen, readBlob, waitWebSocketMessage, waitWebSocketBinary } from "./util";
 interface KeyOptions
 {
@@ -82,7 +82,7 @@ export default class TMCSAnonymous
             cache: "no-cache",
             body: JSON.stringify(registerParam)
         }).then(response => response.json());
-        if (result.error != tmcs_msg.ErrorCode.NONE)
+        if (result.error != tmcs_msg.TMCSError.ErrorCode.NONE)
         {
             throw new Error(result.msg);
         }
@@ -106,13 +106,13 @@ export default class TMCSAnonymous
         await waitWebsocketOpen(this.websocket);
 
         // Handshake ->
-        const handshake = new tmcs_msg.ClientHandShake();
+        const handshake = new tmcs_msg.TMCSMsg.ClientHandShake();
         handshake.setClientversion(1);
         this.websocket.send(handshake.serializeBinary());
 
         // <- Handshake
         let buffer = await waitWebSocketBinary(this.websocket, this.timeout);
-        const serverHandshake = tmcs_msg.ServerHandShake.deserializeBinary(buffer);
+        const serverHandshake = tmcs_msg.TMCSMsg.ServerHandShake.deserializeBinary(buffer);
         const token = openpgp.util.hex_to_Uint8Array(serverHandshake.getToken());
 
         // Sigin ->
@@ -122,7 +122,7 @@ export default class TMCSAnonymous
             detached: true,
             armor: false
         });
-        const signInMsg = new tmcs_msg.SignIn();
+        const signInMsg = new tmcs_msg.TMCSMsg.SignIn();
         signInMsg.setFingerprint(this.pubkey.getFingerprint());
         signInMsg.setToken(serverHandshake.getToken());
         signInMsg.setSign(sign.signature.packets.write());
@@ -130,7 +130,7 @@ export default class TMCSAnonymous
 
         // <- Comfirm
         buffer = await waitWebSocketBinary(this.websocket, this.timeout);
-        const confirm = tmcs_msg.ServerHandShake.deserializeBinary(buffer);
+        const confirm = tmcs_msg.TMCSMsg.ServerHandShake.deserializeBinary(buffer);
         this.state = "pending";
     }
 }

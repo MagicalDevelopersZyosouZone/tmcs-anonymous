@@ -19,7 +19,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const openpgp = __importStar(require("openpgp"));
-const tmcs_msg_pb_1 = __importDefault(require("./proto/tmcs_msg_pb"));
+const tmcs_proto_1 = __importDefault(require("tmcs-proto"));
 const util_1 = require("./util");
 class TMCSAnonymous {
     constructor(address, useSSL = true) {
@@ -76,7 +76,7 @@ class TMCSAnonymous {
                 cache: "no-cache",
                 body: JSON.stringify(registerParam)
             }).then(response => response.json());
-            if (result.error != tmcs_msg_pb_1.default.ErrorCode.NONE) {
+            if (result.error != tmcs_proto_1.default.TMCSError.ErrorCode.NONE) {
                 throw new Error(result.msg);
             }
             this.state = "registed";
@@ -100,12 +100,12 @@ class TMCSAnonymous {
             this.websocket = new WebSocket(`${this.wsProtocol}${this.remoteAddress}/ws`);
             yield util_1.waitWebsocketOpen(this.websocket);
             // Handshake ->
-            const handshake = new tmcs_msg_pb_1.default.ClientHandShake();
+            const handshake = new tmcs_proto_1.default.TMCSMsg.ClientHandShake();
             handshake.setClientversion(1);
             this.websocket.send(handshake.serializeBinary());
             // <- Handshake
             let buffer = yield util_1.waitWebSocketBinary(this.websocket, this.timeout);
-            const serverHandshake = tmcs_msg_pb_1.default.ServerHandShake.deserializeBinary(buffer);
+            const serverHandshake = tmcs_proto_1.default.TMCSMsg.ServerHandShake.deserializeBinary(buffer);
             const token = openpgp.util.hex_to_Uint8Array(serverHandshake.getToken());
             // Sigin ->
             const sign = yield openpgp.sign({
@@ -114,14 +114,14 @@ class TMCSAnonymous {
                 detached: true,
                 armor: false
             });
-            const signInMsg = new tmcs_msg_pb_1.default.SignIn();
+            const signInMsg = new tmcs_proto_1.default.TMCSMsg.SignIn();
             signInMsg.setFingerprint(this.pubkey.getFingerprint());
             signInMsg.setToken(serverHandshake.getToken());
             signInMsg.setSign(sign.signature.packets.write());
             this.websocket.send(signInMsg.serializeBinary());
             // <- Comfirm
             buffer = yield util_1.waitWebSocketBinary(this.websocket, this.timeout);
-            const confirm = tmcs_msg_pb_1.default.ServerHandShake.deserializeBinary(buffer);
+            const confirm = tmcs_proto_1.default.TMCSMsg.ServerHandShake.deserializeBinary(buffer);
             this.state = "pending";
         });
     }
