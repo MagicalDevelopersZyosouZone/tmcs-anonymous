@@ -54,4 +54,12 @@ function PromiseTimeout(executor, timeout) {
     });
 }
 exports.PromiseTimeout = PromiseTimeout;
+function promiseOrNot(input) {
+    return __awaiter(this, void 0, void 0, function* () {
+        if (input instanceof Promise)
+            input = yield input;
+        return input;
+    });
+}
+exports.promiseOrNot = promiseOrNot;
 //# sourceMappingURL=util.js.map

@@ -12,6 +12,17 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const openpgp_1 = __importDefault(require("openpgp"));
+const tmcs_proto_1 = require("tmcs-proto");
+var MessageState;
+(function (MessageState) {
+    MessageState[MessageState["Pending"] = -2] = "Pending";
+    MessageState[MessageState["Sended"] = -1] = "Sended";
+    MessageState[MessageState["Lost"] = 0] = "Lost";
+    MessageState[MessageState["Received"] = 1] = "Received";
+    MessageState[MessageState["Reject"] = 8] = "Reject";
+    MessageState[MessageState["Timeout"] = 2] = "Timeout";
+    MessageState[MessageState["Failed"] = 4] = "Failed";
+})(MessageState = exports.MessageState || (exports.MessageState = {}));
 class Message {
     get armored() { return this.armored; }
     constructor(sender, receiver, body, id = -1) {

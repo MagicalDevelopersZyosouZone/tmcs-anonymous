@@ -1,4 +1,5 @@
 import * as openpgp from "openpgp";
+import { Message } from "./message";
 import { User } from "./user";
 import { Session } from "./session";
 interface KeyOptions {
@@ -9,7 +10,7 @@ interface KeyOptions {
 export default class TMCSAnonymous {
     user: User;
     sessions: Session[];
-    contacts: User[];
+    contacts: Map<string, User>;
     remoteAddress: string;
     useSSL: boolean;
     websocket: WebSocket;
@@ -17,7 +18,8 @@ export default class TMCSAnonymous {
     timeout: 3000;
     onNewSession: (session: Session) => void;
     onContactRequest: (user: User) => boolean | Promise<boolean>;
-    private msgId;
+    private messageArchive;
+    private packageArchive;
     private readonly httpProtocol;
     private readonly wsProtocol;
     private readonly httpBaseAddr;
@@ -31,7 +33,8 @@ export default class TMCSAnonymous {
     private errorHandler;
     private msgHandler;
     private receiptHandler;
+    send(message: Message): Promise<void>;
     private sendPack;
-    private receipt;
+    private genReceipt;
 }
 export {};

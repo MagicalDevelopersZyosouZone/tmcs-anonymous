@@ -47,3 +47,10 @@ export function PromiseTimeout<T>(executor: (resolve: (value?: T | PromiseLike<T
         executor(resolve, reject);
     });
 }
+
+export async function promiseOrNot<T>(input: T | Promise<T>): Promise<T>
+{
+    if (input instanceof Promise)
+        input = await input;
+    return input;
+}

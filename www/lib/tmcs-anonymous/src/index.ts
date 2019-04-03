@@ -1,8 +1,8 @@
 import * as openpgp from "openpgp";
 import tmcs_msg from "tmcs-proto";
 import { TMCSError, TMCSMsg, TMCSRPC } from "tmcs-proto";
-import { waitWebsocketOpen, readBlob, waitWebSocketMessage, waitWebSocketBinary } from "./util";
-import { Message } from "./message";
+import { waitWebsocketOpen, readBlob, waitWebSocketMessage, waitWebSocketBinary, promiseOrNot } from "./util";
+import { Message, MessageState } from "./message";
 import { User } from "./user";
 import { Session } from "./session";
 interface KeyOptions
@@ -27,7 +27,7 @@ export default class TMCSAnonymous
 {
     user: User;
     sessions: Session[];
-    contacts: User[] = [];
+    contacts: Map<string, User> = new Map();
     remoteAddress: string;
     useSSL: boolean;
     websocket: WebSocket;
@@ -35,7 +35,8 @@ export default class TMCSAnonymous
     timeout: 3000;
     onNewSession: (session: Session) => void;
     onContactRequest: (user: User) => boolean | Promise<boolean>;
-    private msgId: number = 1;
+    private messageArchive: Message[] = [null];
+    private packageArchive: TMCSMsg.SignedMsg[] = [null];
     private get httpProtocol() { return this.useSSL ? "https://" : "http://" }
     private get wsProtocol() { return this.useSSL ? "wss://" : "ws://" }
     private get httpBaseAddr() { return `${this.httpProtocol}${this.remoteAddress}` }
@@ -185,7 +186,7 @@ export default class TMCSAnonymous
         const messages = msgPack.getMsgList()
             .map(msg => new Message(sender, msg.getReceiver(), msg.getEncryptedmsg_asU8(), msg.getMsgid()));
         
-        let usr = this.contacts.filter(usr => usr.fingerprint === sender)[0];
+        let usr = this.contacts.get(sender);
 
         // Treat as contact request
         if (!usr)
@@ -203,42 +204,72 @@ export default class TMCSAnonymous
             usr = new User("Anonymous", pubkey);
             if (this.onContactRequest)
             {
-                let accept = this.onContactRequest(usr);
-                if (accept instanceof Promise)
-                    accept = await accept;
-                if (!accept)
+                if (!promiseOrNot(this.onContactRequest(usr)))
                 {
-                    this.sendPack(this.receipt(messages, sender, TMCSMsg.MsgReceipt.MsgState.REJECT), sender);
+                    this.sendPack(this.genReceipt(messages, TMCSMsg.MsgReceipt.MsgState.REJECT), sender);
                     return;
                 }
+                this.contacts.set(usr.fingerprint, usr);
             }
+            else
+            {
+                this.sendPack(this.genReceipt(messages, TMCSMsg.MsgReceipt.MsgState.LOST), sender);
+                throw new Error(`Unhandled contact request from {${sender}}`);
+            }
+                
         }
-        this.sendPack(this.receipt(messages, sender), sender);
-        
+        this.sendPack(this.genReceipt(messages), sender);
+
         messages.forEach(msg =>
         {
-            const session = this.sessions.filter(session => session.users.some(usr => usr.fingerprint === msg.sender))[0];
+            let session = this.sessions.filter(session => session.users.some(usr => usr.fingerprint === msg.sender))[0];
             if (!session)
             {
-                let usr = this.contacts.filter(usr => usr.fingerprint === msg.sender)[0];
-
-                // Treat as contact request.
-                if (!usr)
-                {
-
-                }
+                session = new Session(this);
+                session.users = [this.user, usr];
+                if (this.onNewSession)
+                    this.onNewSession(session);
+                this.sessions.push(session);
             }
+            if (session.onmessage)
+                session.onmessage(msg);
+            session.messages.push(msg);
         });
     }
     private receiptHandler(receipts: TMCSMsg.ReceiptPack)
     {
+        receipts.getReceiptsList().forEach(receipt =>
+        {
+            const msg = this.messageArchive[receipt.getMsgid()];
+            if (msg)
+            {
+                msg.state = receipt.getState() as any as MessageState;
+                msg.onStateChange(msg.state);
+            }
+        });
+    }
 
+    async send(message: Message)
+    {
+        message.msgId = this.messageArchive.length++;
+        this.messageArchive[message.msgId] = message;
+        await message.encrypt(this.contacts.get(message.receiver).pubkey, this.user.prvkey);
+
+        const msg = new TMCSMsg.Message();
+        msg.setEncryptedmsg(message.rawBody);
+        msg.setMsgid(message.msgId);
+        msg.setReceiver(message.receiver);
+        msg.setTimestamp(message.time.getTime());
+        const msgPack = new TMCSMsg.MessagePack();
+        msgPack.setMsgList([msg]);
+        await this.sendPack(msgPack, message.receiver);
     }
 
     private async sendPack(pack: TMCSMsg.ReceiptPack | TMCSMsg.MessagePack, receiver: string)
     {
         const signedMsg = new TMCSMsg.SignedMsg();
-        signedMsg.setId(++this.msgId);
+        signedMsg.setId(this.packageArchive.length++);
+        this.packageArchive[signedMsg.getId()] = signedMsg;
         signedMsg.setReceiver(receiver);
         signedMsg.setSender(this.user.pubkey.getFingerprint());
         if (pack instanceof TMCSMsg.ReceiptPack)
@@ -271,7 +302,7 @@ export default class TMCSAnonymous
         this.websocket.send(buffer);
     }
 
-    private receipt(messages: Message[], receiver: string, state: TMCSMsg.MsgReceipt.MsgState = TMCSMsg.MsgReceipt.MsgState.RECEIVED)
+    private genReceipt(messages: Message[], state: TMCSMsg.MsgReceipt.MsgState = TMCSMsg.MsgReceipt.MsgState.RECEIVED)
     {
         const pack = new TMCSMsg.ReceiptPack();
         pack.setReceiptsList(messages.map(msg =>

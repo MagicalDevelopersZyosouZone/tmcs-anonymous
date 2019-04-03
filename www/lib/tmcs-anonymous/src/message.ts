@@ -1,15 +1,29 @@
 import openpgp, { message } from "openpgp";
+import { TMCSMsg } from "tmcs-proto";
+
+export enum MessageState
+{
+    Pending = -2,
+    Sended = -1,
+    Lost = TMCSMsg.MsgReceipt.MsgState.LOST,
+    Received = TMCSMsg.MsgReceipt.MsgState.RECEIVED,
+    Reject = TMCSMsg.MsgReceipt.MsgState.REJECT,
+    Timeout = TMCSMsg.MsgReceipt.MsgState.TIMEOUT,
+    Failed = TMCSMsg.MsgReceipt.MsgState.VERIFYFAILED,
+}
 
 export class Message
 {
     msgId: number;
+    state: MessageState;
     sender: string;
     receiver: string;
     time: Date;
     body: string;
     rawBody: Uint8Array;
     message: openpgp.message.Message;
-    get armored():string { return this.armored as string; }
+    get armored(): string { return this.armored as string; }
+    onStateChange: (state: MessageState) => void;
 
     constructor(sender: string, receiver: string, body: Uint8Array | string, id: number=-1)
     {
