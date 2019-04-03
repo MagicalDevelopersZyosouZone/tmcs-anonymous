@@ -1,6 +1,10 @@
 import * as openpgp from "openpgp";
 import tmcs_msg from "tmcs-proto";
+import { TMCSError, TMCSMsg, TMCSRPC } from "tmcs-proto";
 import { waitWebsocketOpen, readBlob, waitWebSocketMessage, waitWebSocketBinary } from "./util";
+import { Message } from "./message";
+import { User } from "./user";
+import { Session } from "./session";
 interface KeyOptions
 {
     bits?: 1024 | 2048 | 4096;
@@ -21,13 +25,17 @@ interface ServerResponse
 }
 export default class TMCSAnonymous
 {
+    user: User;
+    sessions: Session[];
+    contacts: User[] = [];
     remoteAddress: string;
     useSSL: boolean;
-    pubkey: openpgp.key.Key;
-    prvKey: openpgp.key.Key;
     websocket: WebSocket;
     state: "none" | "registed" | "pending" | "ready" | "disconnected" = "none";
     timeout: 3000;
+    onNewSession: (session: Session) => void;
+    onContactRequest: (user: User) => boolean | Promise<boolean>;
+    private msgId: number = 1;
     private get httpProtocol() { return this.useSSL ? "https://" : "http://" }
     private get wsProtocol() { return this.useSSL ? "wss://" : "ws://" }
     private get httpBaseAddr() { return `${this.httpProtocol}${this.remoteAddress}` }
@@ -50,9 +58,9 @@ export default class TMCSAnonymous
     }
     async setkey(pubkeyArmored: string, prvkeyArmored: string)
     {
-        this.pubkey = (await openpgp.key.readArmored(pubkeyArmored)).keys[0];
+        this.user.pubkey = (await openpgp.key.readArmored(pubkeyArmored)).keys[0];
         if (prvkeyArmored)
-            this.prvKey = (await openpgp.key.readArmored(prvkeyArmored)).keys[0];
+            this.user.prvkey = (await openpgp.key.readArmored(prvkeyArmored)).keys[0];
     }
     async generateKey(options: KeyOptions = {})
     {
@@ -71,8 +79,8 @@ export default class TMCSAnonymous
     {
         const registerParam: RegisterParam = {
             name: "Anonymous",
-            pubkey: this.pubkey.armor(),
-            sign: openpgp.util.Uint8Array_to_b64(await this.sign(openpgp.util.hex_to_Uint8Array(this.pubkey.getFingerprint()))),
+            pubkey: this.user.pubkey.armor(),
+            sign: openpgp.util.Uint8Array_to_b64(await this.sign(openpgp.util.hex_to_Uint8Array(this.user.pubkey.getFingerprint()))),
         }
         const result: ServerResponse = await fetch(`${this.httpBaseAddr}/key/register`, {
             method: "POST",
@@ -93,7 +101,7 @@ export default class TMCSAnonymous
     {
         const sign = await openpgp.sign({
             message: openpgp.message.fromBinary(buffer),
-            privateKeys: [this.prvKey],
+            privateKeys: [this.user.prvkey],
             detached: true,
             armor: false,
         });
@@ -118,12 +126,12 @@ export default class TMCSAnonymous
         // Sigin ->
         const sign = await openpgp.sign({
             message: openpgp.message.fromBinary(token),
-            privateKeys: [this.prvKey],
+            privateKeys: [this.user.prvkey],
             detached: true,
             armor: false
         });
         const signInMsg = new tmcs_msg.TMCSMsg.SignIn();
-        signInMsg.setFingerprint(this.pubkey.getFingerprint());
+        signInMsg.setFingerprint(this.user.pubkey.getFingerprint());
         signInMsg.setToken(serverHandshake.getToken());
         signInMsg.setSign(sign.signature.packets.write());
         this.websocket.send(signInMsg.serializeBinary());
@@ -132,5 +140,147 @@ export default class TMCSAnonymous
         buffer = await waitWebSocketBinary(this.websocket, this.timeout);
         const confirm = tmcs_msg.TMCSMsg.ServerHandShake.deserializeBinary(buffer);
         this.state = "pending";
+
+        this.websocket.onmessage = (ev) => this.handle(ev);
+    }
+
+    private async handle(ev: MessageEvent)
+    {
+        try
+        {
+            const buffer = await readBlob(ev.data);
+            const signedMsg = tmcs_msg.TMCSMsg.SignedMsg.deserializeBinary(buffer);
+            switch (signedMsg.getType())
+            {
+                case tmcs_msg.TMCSMsg.SignedMsg.Type.ERROR:
+                    const err = TMCSError.Error.deserializeBinary(signedMsg.getBody_asU8());
+                    this.errorHandler(err);
+                    return;
+                case TMCSMsg.SignedMsg.Type.MESSAGE:
+                    const msgPack = TMCSMsg.MessagePack.deserializeBinary(signedMsg.getBody_asU8());
+                    this.msgHandler(msgPack, signedMsg.getSender());
+                    return;
+                case TMCSMsg.SignedMsg.Type.RECEIPT:
+                    const receiptPack = TMCSMsg.ReceiptPack.deserializeBinary(signedMsg.getBody_asU8());
+                    this.receiptHandler(receiptPack);
+                    return;
+                default:
+                    throw new Error("Received invalid messge.");
+            }
+        }
+        catch (err)
+        {
+            console.error(err);
+        }
+
+    }
+
+    private errorHandler(err: TMCSError.Error)
+    {
+        console.error(`Server error: ${err.getCode()}: ${err.getMessage()}`);
+    }
+
+    private async msgHandler(msgPack: TMCSMsg.MessagePack, sender :string)
+    {
+        const messages = msgPack.getMsgList()
+            .map(msg => new Message(sender, msg.getReceiver(), msg.getEncryptedmsg_asU8(), msg.getMsgid()));
+        
+        let usr = this.contacts.filter(usr => usr.fingerprint === sender)[0];
+
+        // Treat as contact request
+        if (!usr)
+        {
+            const request = messages[0];
+            if (!request)
+                throw new Error(`Invalid contact request from {${sender}}`);
+            const armored = await request.decrypt(this.user.prvkey);
+            const pubkey = (await openpgp.key.readArmored(armored)).keys[0];
+            if (!pubkey)
+                throw new Error(`Invalid contact request from {${sender}}`);
+            if (!request.verify(pubkey))
+                throw new Error(`Unsigned contact request from {${sender}}`);
+            
+            usr = new User("Anonymous", pubkey);
+            if (this.onContactRequest)
+            {
+                let accept = this.onContactRequest(usr);
+                if (accept instanceof Promise)
+                    accept = await accept;
+                if (!accept)
+                {
+                    this.sendPack(this.receipt(messages, sender, TMCSMsg.MsgReceipt.MsgState.REJECT), sender);
+                    return;
+                }
+            }
+        }
+        this.sendPack(this.receipt(messages, sender), sender);
+        
+        messages.forEach(msg =>
+        {
+            const session = this.sessions.filter(session => session.users.some(usr => usr.fingerprint === msg.sender))[0];
+            if (!session)
+            {
+                let usr = this.contacts.filter(usr => usr.fingerprint === msg.sender)[0];
+
+                // Treat as contact request.
+                if (!usr)
+                {
+
+                }
+            }
+        });
+    }
+    private receiptHandler(receipts: TMCSMsg.ReceiptPack)
+    {
+
+    }
+
+    private async sendPack(pack: TMCSMsg.ReceiptPack | TMCSMsg.MessagePack, receiver: string)
+    {
+        const signedMsg = new TMCSMsg.SignedMsg();
+        signedMsg.setId(++this.msgId);
+        signedMsg.setReceiver(receiver);
+        signedMsg.setSender(this.user.pubkey.getFingerprint());
+        if (pack instanceof TMCSMsg.ReceiptPack)
+        {
+            const buffer = pack.serializeBinary();
+            const sign = await openpgp.sign({
+                message: openpgp.message.fromBinary(buffer),
+                privateKeys: [this.user.prvkey],
+                armor: false,
+                detached: true,
+            });
+            signedMsg.setType(TMCSMsg.SignedMsg.Type.RECEIPT);
+            signedMsg.setBody(buffer);
+            signedMsg.setSign(sign.signature.packets.write());
+        }
+        else if (pack instanceof TMCSMsg.MessagePack)
+        {
+            const buffer = pack.serializeBinary();
+            const sign = await openpgp.sign({
+                message: openpgp.message.fromBinary(buffer),
+                privateKeys: [this.user.prvkey],
+                armor: false,
+                detached: true,
+            });
+            signedMsg.setType(TMCSMsg.SignedMsg.Type.MESSAGE);
+            signedMsg.setBody(buffer);
+            signedMsg.setSign(sign.signature.packets.write());
+        }
+        const buffer = signedMsg.serializeBinary();
+        this.websocket.send(buffer);
+    }
+
+    private receipt(messages: Message[], receiver: string, state: TMCSMsg.MsgReceipt.MsgState = TMCSMsg.MsgReceipt.MsgState.RECEIVED)
+    {
+        const pack = new TMCSMsg.ReceiptPack();
+        pack.setReceiptsList(messages.map(msg =>
+        {
+            const receipt = new TMCSMsg.MsgReceipt();
+            receipt.setMsgid(msg.msgId);
+            receipt.setState(state);
+            return receipt;
+        }));
+        return pack;
     }
 }

@@ -1,10 +1,8 @@
 package main
 
-import (
-	"test"
-)
+import "tmcs"
 
 func main() {
-		tmcs := tmcs.NewTMCSAnonymous()
-		tmcs.Start()
+	tmcs := tmcs.NewTMCSAnonymous()
+	tmcs.Start()
 }
