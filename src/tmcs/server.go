@@ -14,6 +14,7 @@ const ChannelBufferSize = 100
 type TMCSAnonymousServer struct {
 	Active       bool
 	Addr         string
+	RPCHandler   *TMCSAnonymousRPCHandler
 	tmcs         *TMCSAnonymous
 	upgrader     websocket.Upgrader
 	router       *mux.Router
@@ -47,6 +48,9 @@ func NewTMCSAnonymousServer(tmcs *TMCSAnonymous, options TMCSAnonymousServerOpti
 		WriteBufferSize: options.MaxBufferSize,
 	}
 	server.Addr = options.Address
+	server.RPCHandler = &TMCSAnonymousRPCHandler{
+		tmcs: tmcs,
+	}
 	return server
 }
 

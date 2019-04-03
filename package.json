@@ -7,7 +7,7 @@
     "build": "npx webpack",
     "build:watch": "npx webpack -w --mode development",
     "test": "npx mocha ./www/test/test.js",
-    "protoc": "cd www/lib/tmcs-proto && npm run protoc:go && cp -r ./go/ ../../../src/tmcs_msg/"
+    "protoc": "rm -r src/tmcs_msg && cd www/lib/tmcs-proto && npm run protoc:go && cp -r ./go/ ../../../src/tmcs_msg/"
   },
   "keywords": [
     "pgp",

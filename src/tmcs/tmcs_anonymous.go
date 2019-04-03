@@ -2,6 +2,7 @@ package tmcs
 
 import (
 	"cache"
+	"user"
 )
 
 type TMCSAnonymous struct {
@@ -25,4 +26,12 @@ func (tmcs *TMCSAnonymous) Start() {
 	tmcs.RegistedKeys.Start()
 	tmcs.Users.Start()
 	tmcs.Server.Start()
+}
+
+func (tmcs *TMCSAnonymous) GetUser(key string) *user.User {
+	usr, ok := tmcs.Users.Get(key)
+	if !ok {
+		return nil
+	}
+	return usr.(*user.User)
 }

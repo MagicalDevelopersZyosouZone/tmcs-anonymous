@@ -10,11 +10,11 @@ import (
 
 type Key struct {
 	PublicKey   openpgp.EntityList
-	pubkey      []byte
 	FingerPrint string
 	UploadTime  time.Time
 	LifeTime    int64
 	User        *User
+	pubkey      []byte
 }
 
 func NewKey(pubkeyData []byte, lifeTime int64) (*Key, error) {
@@ -29,4 +29,10 @@ func NewKey(pubkeyData []byte, lifeTime int64) (*Key, error) {
 	key.UploadTime = time.Now()
 	key.LifeTime = lifeTime
 	return key, nil
+}
+
+func (key *Key) Serialize() []byte {
+	buffer := bytes.NewBuffer(nil)
+	key.PublicKey[0].Serialize(buffer)
+	return buffer.Bytes()
 }

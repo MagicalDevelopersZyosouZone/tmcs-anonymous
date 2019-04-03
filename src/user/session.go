@@ -21,6 +21,10 @@ import (
 
 const SessionRenewTime = 1800
 
+type RPCHandler interface {
+	handle(rpc *tmcs_msg.RPC)
+}
+
 type SessionMessage struct {
 	Sender   *User
 	Receiver *User
@@ -43,6 +47,7 @@ type IKeyManager interface {
 	RemoveKey(fingerprint string)
 }
 
+// Receive from client
 func (session *Session) recv() {
 	for {
 		select {
@@ -88,6 +93,7 @@ func (session *Session) recv() {
 	}
 }
 
+// Send to client
 func (session *Session) send() {
 	for {
 		select {
@@ -100,6 +106,10 @@ func (session *Session) send() {
 				return
 			}
 			if msg == nil {
+				continue
+			}
+			// Discard messages from blacklist
+			if !session.User.CheckContact(msg.Msg.Sender) {
 				continue
 			}
 			buffer, err := proto.Marshal(msg.Msg)
@@ -166,9 +176,34 @@ func (session *Session) echo(text string) {
 	}
 }
 
+func (session *Session) handleMsg(msg *tmcs_msg.SignedMsg) {
+	switch msg.Type {
+	case tmcs_msg.SignedMsg_Message:
+		session.dispacth(msg)
+	case tmcs_msg.SignedMsg_Receipt:
+		session.dispacth(msg)
+	case tmcs_msg.SignedMsg_RPC:
+		rpc := new(tmcs_msg.RPC)
+		err := proto.Unmarshal(msg.Body, rpc)
+		if err != nil {
+			session.User.Post(&SessionMessage{
+				Msg:      session.errorMessage(tmcs_msg.ErrorCode_InvalidMessage, "Invalid message", ""),
+				Receiver: session.User,
+				Sender:   nil,
+			})
+			return
+		}
+		session.handleRpc(rpc)
+	}
+}
+
+func (session *Session) handleRpc(rpc *tmcs_msg.RPC) {
+
+}
+
 func (session *Session) dispacth(msg *tmcs_msg.SignedMsg) {
-	receiver, ok := session.User.Contacts[msg.Receiver]
-	if !ok {
+	receiver := session.User.tmcs.GetUser(msg.Receiver)
+	if receiver == nil {
 		session.User.Post(&SessionMessage{
 			Sender:   nil,
 			Receiver: session.User,
@@ -176,7 +211,9 @@ func (session *Session) dispacth(msg *tmcs_msg.SignedMsg) {
 		})
 		return
 	}
-	ok = receiver.Post(&SessionMessage{
+	// Add receiver to contacts
+	session.User.Contacts[msg.Receiver] = msg.Receiver
+	ok := receiver.Post(&SessionMessage{
 		Sender:   session.User,
 		Receiver: receiver,
 		Msg:      msg,

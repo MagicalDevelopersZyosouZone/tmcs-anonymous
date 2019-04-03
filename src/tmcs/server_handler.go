@@ -95,7 +95,7 @@ func (server *TMCSAnonymousServer) tryRegister(w http.ResponseWriter, r *http.Re
 	keyBuffer := bytes.NewBuffer(nil)
 	pubkey.Serialize(keyBuffer)
 	key, err := user.NewKey(keyBuffer.Bytes(), keyExpire)
-	return user.NewUser(msg.Name, key)
+	return user.NewUser(msg.Name, key, server.tmcs)
 }
 
 func (server *TMCSAnonymousServer) handleWebSocket() func(http.ResponseWriter, *http.Request) {
