@@ -1,4 +1,4 @@
-import openpgp from "openpgp";
+import * as openpgp from "openpgp";
 export declare enum MessageState {
     Pending = -2,
     Sended = -1,
@@ -16,11 +16,11 @@ export declare class Message {
     time: Date;
     body: string;
     rawBody: Uint8Array;
-    message: openpgp.message.Message;
+    private _verified;
+    readonly verified: boolean;
     readonly armored: string;
     onStateChange: (state: MessageState) => void;
     constructor(sender: string, receiver: string, body: Uint8Array | string, id?: number);
     encrypt(pubkey: openpgp.key.Key, prvkey: openpgp.key.Key): Promise<Uint8Array>;
-    decrypt(prvkey: openpgp.key.Key): Promise<string>;
-    verify(pubkey: openpgp.key.Key): Promise<boolean>;
+    decrypt(prvkey: openpgp.key.Key, pubkey?: openpgp.key.Key): Promise<string>;
 }

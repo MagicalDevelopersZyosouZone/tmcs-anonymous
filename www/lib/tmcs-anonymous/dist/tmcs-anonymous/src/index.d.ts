@@ -25,14 +25,15 @@ export default class TMCSAnonymous {
     private readonly httpBaseAddr;
     constructor(address: string, useSSL?: boolean);
     setkey(pubkeyArmored: string, prvkeyArmored: string): Promise<void>;
-    generateKey(options?: KeyOptions): Promise<openpgp.key.Key>;
-    registerKey(): Promise<string>;
+    generateKey(options?: KeyOptions): Promise<[openpgp.key.Key, openpgp.key.Key]>;
+    registerKey(): Promise<any>;
     sign(buffer: Uint8Array): Promise<Uint8Array>;
     connect(): Promise<void>;
     private handle;
     private errorHandler;
     private msgHandler;
     private receiptHandler;
+    contactRequest(pubkey: string): Promise<boolean>;
     send(message: Message): Promise<void>;
     private sendPack;
     private genReceipt;

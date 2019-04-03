@@ -7,5 +7,5 @@ export declare class Session {
     onmessage: (msg: Message) => void;
     private tmcs;
     constructor(tmcs: TMCSAnonymous);
-    send(message: Message): Promise<void>;
+    send(text: string): Promise<void>;
 }

@@ -12,6 +12,8 @@ import (
 	"tmcs_msg"
 	"user"
 
+	"golang.org/x/crypto/openpgp/armor"
+
 	"github.com/gorilla/mux"
 	"golang.org/x/crypto/openpgp"
 )
@@ -40,6 +42,12 @@ func (msg *responseMsg) ToJSON() []byte {
 		return nil
 	}
 	return data
+}
+
+func (server *TMCSAnonymousServer) userRenewer(usr *user.User) func() {
+	return func() {
+		server.tmcs.Users.Renew(usr.Key.FingerPrint, keyExpire)
+	}
 }
 
 func (server *TMCSAnonymousServer) tryRegister(w http.ResponseWriter, r *http.Request) *user.User {
@@ -95,7 +103,9 @@ func (server *TMCSAnonymousServer) tryRegister(w http.ResponseWriter, r *http.Re
 	keyBuffer := bytes.NewBuffer(nil)
 	pubkey.Serialize(keyBuffer)
 	key, err := user.NewKey(keyBuffer.Bytes(), keyExpire)
-	return user.NewUser(msg.Name, key, server.tmcs)
+	usr := user.NewUser(msg.Name, key, server.tmcs)
+	usr.Renew = server.userRenewer(usr)
+	return usr
 }
 
 func (server *TMCSAnonymousServer) handleWebSocket() func(http.ResponseWriter, *http.Request) {
@@ -136,11 +146,14 @@ func (server *TMCSAnonymousServer) handleRegister() func(http.ResponseWriter, *h
 		server.tmcs.RegistedKeys.Set(sessionId, usr.Key, keyExpire)
 		server.tmcs.Users.Set(usr.Key.FingerPrint, usr, keyExpire)
 
+		responseData := make(map[string]string)
+		responseData["pubkey"] = ""
+		responseData["link"] = sessionId
 		writer.WriteHeader(http.StatusOK)
 		writer.Write((&responseMsg{
 			Error: tmcs_msg.ErrorCode_None,
 			Msg:   "",
-			Data:  sessionId,
+			Data:  responseData,
 		}).ToJSON())
 	}
 }
@@ -220,10 +233,25 @@ func (server *TMCSAnonymousServer) handleSessionRegister(w http.ResponseWriter, 
 	server.tmcs.Users.Set(usr.Key.FingerPrint, usr, keyExpire)
 
 	w.WriteHeader(http.StatusOK)
+	pubkeyBuffer := bytes.NewBuffer(nil)
+	armorBuffer := bytes.NewBuffer(nil)
+	(contact.(*user.User)).Key.PublicKey[0].Serialize(pubkeyBuffer)
+	writer, err := armor.Encode(armorBuffer, "PGP PUBLIC KEY BLOCK", make(map[string]string))
+	if err != nil {
+		serverlog.Error("Failed to armor public key:", err.Error())
+	}
+	_, err = writer.Write(pubkeyBuffer.Bytes())
+	if err != nil {
+		serverlog.Error("Failed to armor public key:", err.Error())
+	}
+	writer.Close()
+	responseData := make(map[string]string)
+	responseData["pubkey"] = (string)(armorBuffer.Bytes())
+	responseData["link"] = ""
 	w.Write((&responseMsg{
 		Error: tmcs_msg.ErrorCode_None,
 		Msg:   "",
-		Data:  usr.Key.FingerPrint,
+		Data:  responseData,
 	}).ToJSON())
 }
 

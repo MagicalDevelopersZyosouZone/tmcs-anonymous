@@ -11,12 +11,15 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const message_1 = require("./message");
 class Session {
     constructor(tmcs) {
+        this.users = [];
+        this.messages = [];
         this.tmcs = tmcs;
     }
-    send(message) {
+    send(text) {
         return __awaiter(this, void 0, void 0, function* () {
             yield Promise.all(this.users.filter(usr => usr !== this.tmcs.user).map((usr) => __awaiter(this, void 0, void 0, function* () {
-                const msg = new message_1.Message(this.tmcs.user.fingerprint, usr.fingerprint, message.body);
+                const msg = new message_1.Message(this.tmcs.user.fingerprint, usr.fingerprint, text);
+                msg.time = new Date();
                 yield this.tmcs.send(msg);
             })));
         });

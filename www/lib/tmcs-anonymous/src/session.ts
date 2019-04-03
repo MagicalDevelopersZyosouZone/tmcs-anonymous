@@ -4,8 +4,8 @@ import TMCSAnonymous from ".";
 
 export class Session
 {
-    users: User[];
-    messages: Message[];
+    users: User[] = [];
+    messages: Message[] = [];
     onmessage: (msg: Message) => void;
 
     private tmcs: TMCSAnonymous;
@@ -15,11 +15,12 @@ export class Session
         this.tmcs = tmcs;
     }
 
-    async send(message: Message)
+    async send(text: string)
     {
         await Promise.all(this.users.filter(usr => usr !== this.tmcs.user).map(async (usr) =>
         {
-            const msg = new Message(this.tmcs.user.fingerprint, usr.fingerprint, message.body);
+            const msg = new Message(this.tmcs.user.fingerprint, usr.fingerprint, text);
+            msg.time = new Date();
             await this.tmcs.send(msg);
         }));
     }

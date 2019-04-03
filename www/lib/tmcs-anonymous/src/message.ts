@@ -1,4 +1,4 @@
-import openpgp, { message } from "openpgp";
+import * as openpgp from "openpgp";
 import { TMCSMsg } from "tmcs-proto";
 
 export enum MessageState
@@ -21,7 +21,8 @@ export class Message
     time: Date;
     body: string;
     rawBody: Uint8Array;
-    message: openpgp.message.Message;
+    private _verified = false;
+    get verified() { return this._verified }
     get armored(): string { return this.armored as string; }
     onStateChange: (state: MessageState) => void;
 
@@ -33,19 +34,18 @@ export class Message
         if (typeof (body) === "string")
         {
             this.body = body;
-            this.message = openpgp.message.fromText(body);
         }
         else
         {
             this.rawBody = body;
-            this.message = openpgp.message.fromBinary(body);
         }
+        this.time = new Date();
     }
 
     async encrypt(pubkey: openpgp.key.Key, prvkey: openpgp.key.Key)
     {
         const enc = await openpgp.encrypt({
-            message: this.message,
+            message: openpgp.message.fromText(this.body),
             armor: false,
             publicKeys: [pubkey],
             privateKeys: [prvkey],
@@ -55,22 +55,18 @@ export class Message
         return this.rawBody;
     }
 
-    async decrypt(prvkey: openpgp.key.Key)
+    async decrypt(prvkey: openpgp.key.Key, pubkey?: openpgp.key.Key)
     {
         const dec = await openpgp.decrypt({
-            message: this.message,
+            message: await openpgp.message.read(this.rawBody),
             privateKeys: [prvkey],
+            publicKeys: pubkey ? [pubkey] : undefined,
         });
-        this.body = openpgp.util.decode_utf8(dec.data as Uint8Array) as string;
+        this.body = dec.data as string;
+        if (pubkey)
+        {
+            this._verified = dec.signatures[0].valid && pubkey.getFingerprint() === this.sender;
+        }
         return this.body;
-    }
-
-    async verify(pubkey: openpgp.key.Key)
-    {
-        const ver = await openpgp.verify({
-            message: this.message,
-            publicKeys: [pubkey]
-        });
-        return ver.signatures[0].valid;
     }
 }

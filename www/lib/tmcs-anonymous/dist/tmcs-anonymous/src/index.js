@@ -27,6 +27,7 @@ const user_1 = require("./user");
 const session_1 = require("./session");
 class TMCSAnonymous {
     constructor(address, useSSL = true) {
+        this.sessions = [];
         this.contacts = new Map();
         this.state = "none";
         this.messageArchive = [null];
@@ -49,7 +50,7 @@ class TMCSAnonymous {
     get httpBaseAddr() { return `${this.httpProtocol}${this.remoteAddress}`; }
     setkey(pubkeyArmored, prvkeyArmored) {
         return __awaiter(this, void 0, void 0, function* () {
-            this.user.pubkey = (yield openpgp.key.readArmored(pubkeyArmored)).keys[0];
+            this.user = new user_1.User("Anonymous", (yield openpgp.key.readArmored(pubkeyArmored)).keys[0]);
             if (prvkeyArmored)
                 this.user.prvkey = (yield openpgp.key.readArmored(prvkeyArmored)).keys[0];
         });
@@ -65,7 +66,7 @@ class TMCSAnonymous {
                 keyExpirationTime: 86400,
             });
             yield this.setkey(key.publicKeyArmored, key.privateKeyArmored);
-            return key.key;
+            return [this.user.pubkey, this.user.prvkey];
         });
     }
     registerKey() {
@@ -87,7 +88,13 @@ class TMCSAnonymous {
                 throw new Error(result.msg);
             }
             this.state = "registed";
-            return `${this.httpBaseAddr}/chat/${result.data}`;
+            if (result.data.pubkey !== "") {
+                return result.data.pubkey;
+            }
+            else if (result.data.link !== "") {
+                return `${this.httpBaseAddr}/chat/${result.data.link}`;
+            }
+            return null;
         });
     }
     sign(buffer) {
@@ -177,21 +184,30 @@ class TMCSAnonymous {
                 const pubkey = (yield openpgp.key.readArmored(armored)).keys[0];
                 if (!pubkey)
                     throw new Error(`Invalid contact request from {${sender}}`);
-                if (!request.verify(pubkey))
+                yield request.decrypt(this.user.prvkey, pubkey);
+                if (!request.verified)
                     throw new Error(`Unsigned contact request from {${sender}}`);
                 usr = new user_1.User("Anonymous", pubkey);
                 if (this.onContactRequest) {
-                    if (!util_1.promiseOrNot(this.onContactRequest(usr))) {
+                    if (!(yield util_1.promiseOrNot(this.onContactRequest(usr)))) {
                         this.sendPack(this.genReceipt(messages, tmcs_proto_2.TMCSMsg.MsgReceipt.MsgState.REJECT), sender);
                         return;
                     }
                     this.contacts.set(usr.fingerprint, usr);
+                    this.sendPack(this.genReceipt(messages), sender);
+                    let session = new session_1.Session(this);
+                    session.users = [this.user, usr];
+                    if (this.onNewSession)
+                        this.onNewSession(session);
+                    this.sessions.push(session);
+                    return;
                 }
                 else {
                     this.sendPack(this.genReceipt(messages, tmcs_proto_2.TMCSMsg.MsgReceipt.MsgState.LOST), sender);
                     throw new Error(`Unhandled contact request from {${sender}}`);
                 }
             }
+            // Send receipts
             this.sendPack(this.genReceipt(messages), sender);
             messages.forEach(msg => {
                 let session = this.sessions.filter(session => session.users.some(usr => usr.fingerprint === msg.sender))[0];
@@ -213,8 +229,33 @@ class TMCSAnonymous {
             const msg = this.messageArchive[receipt.getMsgid()];
             if (msg) {
                 msg.state = receipt.getState();
-                msg.onStateChange(msg.state);
+                if (msg.onStateChange)
+                    msg.onStateChange(msg.state);
             }
+        });
+    }
+    contactRequest(pubkey) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
+                const key = yield openpgp.key.readArmored(pubkey);
+                const user = new user_1.User("Anonymous", key.keys[0]);
+                this.contacts.set(user.fingerprint, user);
+                const msg = new message_1.Message(this.user.fingerprint, user.fingerprint, this.user.pubkey.armor());
+                msg.onStateChange = (state) => {
+                    if (state === message_1.MessageState.Received) {
+                        resolve(true);
+                        const session = new session_1.Session(this);
+                        session.users = [this.user, user];
+                        if (this.onNewSession)
+                            this.onNewSession(session);
+                        this.sessions.push(session);
+                    }
+                    else
+                        resolve(false);
+                };
+                yield msg.encrypt(user.pubkey, this.user.prvkey);
+                yield this.send(msg);
+            }));
         });
     }
     send(message) {

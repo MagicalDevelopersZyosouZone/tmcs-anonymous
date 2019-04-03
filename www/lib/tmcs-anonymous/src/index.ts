@@ -21,12 +21,12 @@ interface ServerResponse
 {
     error: number;
     msg: string;
-    data: string;
+    data: any;
 }
 export default class TMCSAnonymous
 {
     user: User;
-    sessions: Session[];
+    sessions: Session[] = [];
     contacts: Map<string, User> = new Map();
     remoteAddress: string;
     useSSL: boolean;
@@ -59,11 +59,11 @@ export default class TMCSAnonymous
     }
     async setkey(pubkeyArmored: string, prvkeyArmored: string)
     {
-        this.user.pubkey = (await openpgp.key.readArmored(pubkeyArmored)).keys[0];
+        this.user = new User("Anonymous", (await openpgp.key.readArmored(pubkeyArmored)).keys[0])
         if (prvkeyArmored)
             this.user.prvkey = (await openpgp.key.readArmored(prvkeyArmored)).keys[0];
     }
-    async generateKey(options: KeyOptions = {})
+    async generateKey(options: KeyOptions = {}): Promise<[openpgp.key.Key, openpgp.key.Key]>
     {
         options.bits = options.bits || 2048;
         options.name = options.name || "Anonymous";
@@ -74,7 +74,7 @@ export default class TMCSAnonymous
             keyExpirationTime: 86400,
         });
         await this.setkey(key.publicKeyArmored, key.privateKeyArmored);
-        return key.key;
+        return [this.user.pubkey, this.user.prvkey];
     }
     async registerKey()
     {
@@ -96,7 +96,15 @@ export default class TMCSAnonymous
             throw new Error(result.msg);
         }
         this.state = "registed";
-        return `${this.httpBaseAddr}/chat/${result.data}`;
+        if (result.data.pubkey !== "")
+        {
+            return result.data.pubkey;
+        }
+        else if (result.data.link !== "")
+        {
+            return `${this.httpBaseAddr}/chat/${result.data.link}`;
+        }
+        return null;
     }
     async sign(buffer: Uint8Array)
     {
@@ -198,18 +206,28 @@ export default class TMCSAnonymous
             const pubkey = (await openpgp.key.readArmored(armored)).keys[0];
             if (!pubkey)
                 throw new Error(`Invalid contact request from {${sender}}`);
-            if (!request.verify(pubkey))
+            await request.decrypt(this.user.prvkey, pubkey);
+            if (!request.verified)
                 throw new Error(`Unsigned contact request from {${sender}}`);
             
             usr = new User("Anonymous", pubkey);
             if (this.onContactRequest)
             {
-                if (!promiseOrNot(this.onContactRequest(usr)))
+                if (!await promiseOrNot(this.onContactRequest(usr)))
                 {
                     this.sendPack(this.genReceipt(messages, TMCSMsg.MsgReceipt.MsgState.REJECT), sender);
                     return;
                 }
                 this.contacts.set(usr.fingerprint, usr);
+                this.sendPack(this.genReceipt(messages), sender);
+
+                let session = new Session(this);
+                session.users = [this.user, usr];
+                if (this.onNewSession)
+                    this.onNewSession(session);
+                this.sessions.push(session);
+
+                return;
             }
             else
             {
@@ -218,6 +236,8 @@ export default class TMCSAnonymous
             }
                 
         }
+
+        // Send receipts
         this.sendPack(this.genReceipt(messages), sender);
 
         messages.forEach(msg =>
@@ -244,8 +264,37 @@ export default class TMCSAnonymous
             if (msg)
             {
                 msg.state = receipt.getState() as any as MessageState;
-                msg.onStateChange(msg.state);
+                if (msg.onStateChange)
+                    msg.onStateChange(msg.state);
             }
+        });
+    }
+
+    async contactRequest(pubkey: string): Promise<boolean>
+    {
+        return new Promise(async (resolve, reject) =>
+        {
+            const key = await openpgp.key.readArmored(pubkey);
+            const user = new User("Anonymous", key.keys[0]);
+            this.contacts.set(user.fingerprint, user);
+            const msg = new Message(this.user.fingerprint, user.fingerprint, this.user.pubkey.armor());
+            msg.onStateChange = (state) =>
+            {
+                if (state === MessageState.Received)
+                {
+                    resolve(true);
+                    
+                    const session = new Session(this);
+                    session.users = [this.user, user];
+                    if (this.onNewSession)
+                        this.onNewSession(session);
+                    this.sessions.push(session);
+                }
+                else
+                    resolve(false);
+            };
+            await msg.encrypt(user.pubkey, this.user.prvkey)
+            await this.send(msg);
         });
     }
 

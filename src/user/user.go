@@ -25,6 +25,8 @@ func NewUser(name string, key *Key, tmcs iTMCSAnonymous) *User {
 	user.Key = key
 	user.ContactLimit = 1
 	user.chPost = make(chan *SessionMessage, 100)
+	user.tmcs = tmcs
+
 	return user
 }
 

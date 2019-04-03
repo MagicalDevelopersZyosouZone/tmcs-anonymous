@@ -7,11 +7,15 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
+    result["default"] = mod;
+    return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const openpgp_1 = __importDefault(require("openpgp"));
+const openpgp = __importStar(require("openpgp"));
 const tmcs_proto_1 = require("tmcs-proto");
 var MessageState;
 (function (MessageState) {
@@ -24,24 +28,25 @@ var MessageState;
     MessageState[MessageState["Failed"] = 4] = "Failed";
 })(MessageState = exports.MessageState || (exports.MessageState = {}));
 class Message {
-    get armored() { return this.armored; }
     constructor(sender, receiver, body, id = -1) {
+        this._verified = false;
         this.msgId = id;
         this.sender = sender;
         this.receiver = receiver;
         if (typeof (body) === "string") {
             this.body = body;
-            this.message = openpgp_1.default.message.fromText(body);
         }
         else {
             this.rawBody = body;
-            this.message = openpgp_1.default.message.fromBinary(body);
         }
+        this.time = new Date();
     }
+    get verified() { return this._verified; }
+    get armored() { return this.armored; }
     encrypt(pubkey, prvkey) {
         return __awaiter(this, void 0, void 0, function* () {
-            const enc = yield openpgp_1.default.encrypt({
-                message: this.message,
+            const enc = yield openpgp.encrypt({
+                message: openpgp.message.fromText(this.body),
                 armor: false,
                 publicKeys: [pubkey],
                 privateKeys: [prvkey],
@@ -51,23 +56,18 @@ class Message {
             return this.rawBody;
         });
     }
-    decrypt(prvkey) {
+    decrypt(prvkey, pubkey) {
         return __awaiter(this, void 0, void 0, function* () {
-            const dec = yield openpgp_1.default.decrypt({
-                message: this.message,
+            const dec = yield openpgp.decrypt({
+                message: yield openpgp.message.read(this.rawBody),
                 privateKeys: [prvkey],
+                publicKeys: pubkey ? [pubkey] : undefined,
             });
-            this.body = openpgp_1.default.util.decode_utf8(dec.data);
+            this.body = dec.data;
+            if (pubkey) {
+                this._verified = dec.signatures[0].valid && pubkey.getFingerprint() === this.sender;
+            }
             return this.body;
-        });
-    }
-    verify(pubkey) {
-        return __awaiter(this, void 0, void 0, function* () {
-            const ver = yield openpgp_1.default.verify({
-                message: this.message,
-                publicKeys: [pubkey]
-            });
-            return ver.signatures[0].valid;
         });
     }
 }
