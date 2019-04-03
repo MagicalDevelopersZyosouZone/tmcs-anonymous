@@ -4,7 +4,9 @@
   "description": "A PGP based anonymous IM platform.",
   "main": "index.js",
   "scripts": {
-    "build": "npx webpack",
+    "build": "npm run build:go && npm run build:www",
+    "build:go": "export GOPATH=$PWD:$GOPATH && cd src/tmcs-anonymous && go install",
+    "build:www": "npx webpack",
     "build:watch": "npx webpack -w --mode development",
     "test": "npx mocha ./www/test/test.js",
     "protoc": "rm -r src/tmcs_msg && cd www/lib/tmcs-proto && npm run protoc:go && cp -r ./go/ ../../../src/tmcs_msg/"
