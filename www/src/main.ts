@@ -18,7 +18,7 @@ async function TMCSConsole()
         console.log(prvkey.armor());
         return [pubkey, prvkey];
     };
-    (window as any).register = async () =>
+    (window as any).signup = async () =>
     {
         const result = await tmcs.registerKey();
         console.log(result);
@@ -27,15 +27,11 @@ async function TMCSConsole()
     (window as any).connect = async () =>
     {
         await tmcs.connect();
-        console.log(tmcs.state);
-    }
-    (window as any).startReceive = () =>
-    {
         tmcs.onContactRequest = (usr) =>
         {
-            console.log(`Received a contact request from {${usr.fingerprint}}`);
+            console.log(`[Notice] Received a contact request from {${usr.fingerprint}}`);
             console.log(usr.pubkey.armor());
-            console.log(`Call 'accept()' to accept this request, Call 'reject()' to reject it.`);
+            console.log(`\tCall 'accept()' to accept this request, Call 'reject()' to reject it.`);
             return new Promise((resolve) =>
             {
                 (window as any).accept = () =>
@@ -56,19 +52,19 @@ async function TMCSConsole()
         }
         tmcs.onNewSession = (session) =>
         {
-            console.log(`A new session created.`);
-            session.onmessage = async(message) =>
+            console.log(`[Notice] A new session created.`);
+            session.onmessage = async (message) =>
             {
-                await message.decrypt(tmcs.user.prvkey, tmcs.contacts.get(message.sender).pubkey));
+                await message.decrypt(tmcs.user.prvkey, tmcs.contacts.get(message.sender).pubkey);
                 if (message.verified)
                 {
                     console.log(`{${message.sender}} - ${message.time.toTimeString()} - verified: `);
-                    console.log(message.body);
+                    console.log(`\t${message.body}`);
                 }
                 else
                 {
                     console.log(`{${message.sender}} - ${message.time.toTimeString()} - not verified: `);
-                    console.log(message.body);
+                    console.log(`\t${message.body}`);
                 }
 
                 (window as any).send = async (text: string) =>
@@ -81,25 +77,38 @@ async function TMCSConsole()
                 await session.send(text);
             }
         };
-    };
-    (window as any).create = async() =>
+        console.log(tmcs.state);
+    }
+    (window as any).quickStart = async() =>
     {
         await tmcs.generateKey();
         console.log(await tmcs.registerKey());
-        await tmcs.connect();
-        (window as any).startReceive();
+        (window as any).connect();
     }
 
-    (window as any).join = async () =>
+    (window as any).quickJoin = async () =>
     {
         await tmcs.generateKey();
         let pubkey = await tmcs.registerKey();
         (window as any).pubkey = pubkey;
-        await tmcs.connect();
-        (window as any).startReceive();
+        (window as any).connect();
         await tmcs.contactRequest(pubkey);
+    }
+    (window as any).help = () =>
+    {
+        console.log(`TMCS Anonymous@console
+
+    genkey()            Generate a new PGP key pair.
+    signup()            Sign up your public key to TMCS Anonymous server.
+    connect()           Connect to TMCS Anonymous server.
+    quickStart()        One step to TMCS Anonymous.
+    quickJoin()         One step to join a session.
+    help()              Get help.
+    version()           Get the version.
+`);
     }
     console.log("TMCS Anonymous@console");
     console.log("Ready.");
+    console.log("Call 'help()' for help.");
 }
 TMCSConsole();
