@@ -321,6 +321,7 @@ func NewSession(connection *websocket.Conn, bufferSize int) *Session {
 func (session *Session) Start(keyLib *cache.ObjectCache) bool {
 	if session.handshake(keyLib) {
 		session.chClose = make(chan int, 2)
+		session.Connected = true
 		go session.recv()
 		go session.send()
 		return true
@@ -338,13 +339,15 @@ func (session *Session) Join(origin *Session) {
 
 // Close the connection
 func (session *Session) Close() {
-	session.chClose <- 1
-	session.chClose <- 1
-	if session.connection != nil {
-		session.connection.Close()
-		session.Connected = false
+	if session.Connected {
+		session.chClose <- 1
+		session.chClose <- 1
+		if session.connection != nil {
+			session.connection.Close()
+			session.Connected = false
+		}
+		close(session.chClose)
 	}
-	close(session.chClose)
 }
 
 func (session *Session) Dispose() {

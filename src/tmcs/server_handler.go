@@ -120,7 +120,7 @@ func (server *TMCSAnonymousServer) handleWebSocket() func(http.ResponseWriter, *
 			return
 		}
 		userObj, ok := server.tmcs.Users.Get(session.User.Key.FingerPrint)
-		if ok {
+		if ok && (userObj.(*user.User)).Session != nil {
 			(userObj.(*user.User)).Session.Join(session)
 		} else {
 			(userObj.(*user.User)).Session = session
