@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "npm run build:go && npm run build:www",
-    "build:go": "cd src/tmcs-anonymous && go build",
+    "build:go": "cd src/tmcs-anonymous && go get -v . && go build",
     "build:www": "npx webpack",
     "build:watch": "npx webpack -w --mode development",
     "test": "npx mocha ./www/test/test.js",
