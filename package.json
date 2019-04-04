@@ -5,11 +5,12 @@
   "main": "index.js",
   "scripts": {
     "build": "npm run build:go && npm run build:www",
-    "build:go": "export GOPATH=$PWD:$GOPATH && cd src/tmcs-anonymous && go install",
+    "build:go": "cd src/tmcs-anonymous && go build",
     "build:www": "npx webpack",
     "build:watch": "npx webpack -w --mode development",
     "test": "npx mocha ./www/test/test.js",
-    "protoc": "rm -r src/tmcs_msg && cd www/lib/tmcs-proto && npm run protoc:go && cp -r ./go/ ../../../src/tmcs_msg/"
+    "protoc": "rm -r src/tmcs_msg && cd www/lib/tmcs-proto && npm run protoc:go && cp -r ./go/ ../../../src/tmcs_msg/",
+    "go-install": "export GOPATH=$PWD:$GOPATH && cd src/tmcs-anonymous && go get -v . "
   },
   "keywords": [
     "pgp",
@@ -27,17 +28,16 @@
     "webpack-cli": "^3.2.3"
   },
   "dependencies": {
+    "@types/bn.js": "^4.11.5",
     "@types/chai": "^4.1.7",
     "@types/google-protobuf": "^3.2.7",
     "@types/mocha": "^5.2.6",
-    "@types/openpgp": "^4.4.2",
     "@types/protobufjs": "^6.0.0",
     "chai": "^4.2.0",
     "google-protobuf": "^3.7.0",
     "linq": "^3.1.1",
     "node-fetch": "^2.3.0",
-    "openpgp": "^4.4.10",
-    "tmcs-proto": "./www/lib/tmcs-proto",
-    "tmcs-anonymous": "./www/lib/tmcs-anonymous"
+    "tmcs-anonymous": "./www/lib/tmcs-anonymous",
+    "tmcs-proto": "./www/lib/tmcs-proto"
   }
 }
