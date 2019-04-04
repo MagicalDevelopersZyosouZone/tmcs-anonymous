@@ -1,7 +1,14 @@
 matrix:
   include:
     - language: node_js
+      node_js: "0.12"
       before_script:
         - npm install
+        - npm install -g npm@latest
       script:
-        - npm run build
+        - npm run build:www
+    - language: go
+      go: "1.12"
+      go_import_path: tmcs-anonymous
+      script:
+        - npm run build:go
