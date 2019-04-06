@@ -49,6 +49,12 @@ type IKeyManager interface {
 
 // Receive from client
 func (session *Session) recv() {
+	defer func() {
+		if r := recover(); r != nil {
+			serverlog.Error("Error when receiving from {" + session.User.Key.FingerPrint + "}")
+			session.Close()
+		}
+	}()
 	for {
 		select {
 		case <-session.chClose:
@@ -95,6 +101,12 @@ func (session *Session) recv() {
 
 // Send to client
 func (session *Session) send() {
+	defer func() {
+		if r := recover(); r != nil {
+			serverlog.Error("Error when sending to {" + session.User.Key.FingerPrint + "}")
+			session.Close()
+		}
+	}()
 	for {
 		select {
 		case <-session.chClose:

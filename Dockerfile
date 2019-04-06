@@ -6,6 +6,6 @@ SHELL ["bash", "-c"]
 ENV GOPATH=/go/src/tmcs-anonymous
 EXPOSE 3000
 CMD cd /go/src/tmcs-anonymous/src/tmcs-anonymous && \
-    go build && \
+    go install && \
     cd /go/src/tmcs-anonymous/bin && \
     ./tmcs-anonymous
