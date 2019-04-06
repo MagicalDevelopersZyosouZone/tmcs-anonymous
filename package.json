@@ -5,12 +5,12 @@
   "main": "index.js",
   "scripts": {
     "build": "npm run build:go && npm run build:www",
-    "build:go": "cd src/tmcs-anonymous && go get -v . && go build",
+    "build:go": "export GOPATH=$PWD && cd src/tmcs-anonymous && go build",
     "build:www": "npx webpack",
     "build:watch": "npx webpack -w --mode development",
     "test": "npx mocha ./www/test/test.js",
     "protoc": "rm -r src/tmcs_msg && cd www/lib/tmcs-proto && npm run protoc:go && cp -r ./go/ ../../../src/tmcs_msg/",
-    "go-install": "export GOPATH=$PWD:$GOPATH && cd src/tmcs-anonymous && go get -v . "
+    "go-install": "export GOPATH=$PWD && cd src/tmcs-anonymous && go get -v . "
   },
   "keywords": [
     "pgp",

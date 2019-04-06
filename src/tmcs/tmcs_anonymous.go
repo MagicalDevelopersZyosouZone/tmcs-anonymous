@@ -14,7 +14,7 @@ type TMCSAnonymous struct {
 func NewTMCSAnonymous() *TMCSAnonymous {
 	tmcs := new(TMCSAnonymous)
 	tmcs.Server = NewTMCSAnonymousServer(tmcs, TMCSAnonymousServerOptions{
-		Address:       "localhost:57321",
+		Address:       "0.0.0.0:3000",
 		MaxBufferSize: 8192,
 	})
 	tmcs.RegistedKeys = cache.NewObjectCache(100)
