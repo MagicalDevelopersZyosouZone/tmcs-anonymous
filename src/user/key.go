@@ -3,7 +3,11 @@ package user
 import (
 	"bytes"
 	"encoding/hex"
+	"errors"
+	"serverlog"
 	"time"
+
+	"golang.org/x/crypto/openpgp/armor"
 
 	"golang.org/x/crypto/openpgp"
 )
@@ -35,4 +39,17 @@ func (key *Key) Serialize() []byte {
 	buffer := bytes.NewBuffer(nil)
 	key.PublicKey[0].Serialize(buffer)
 	return buffer.Bytes()
+}
+
+func (key *Key) Armor() (string, error) {
+	buffer := key.Serialize()
+	armorBuffer := bytes.NewBuffer(nil)
+	writer, err := armor.Encode(armorBuffer, "PGP PUBLIC KEY BLOCK", make(map[string]string))
+	_, err = writer.Write(buffer)
+	if err != nil {
+		serverlog.Error("Failed to armor pubkey of", key.FingerPrint)
+		return "", errors.New("Failed to armor pubkey.")
+	}
+	writer.Close()
+	return string(armorBuffer.Bytes()), nil
 }

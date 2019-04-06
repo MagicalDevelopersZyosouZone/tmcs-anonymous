@@ -12,8 +12,6 @@ import (
 	"tmcs_msg"
 	"user"
 
-	"golang.org/x/crypto/openpgp/armor"
-
 	"github.com/gorilla/mux"
 	"golang.org/x/crypto/openpgp"
 )
@@ -233,25 +231,39 @@ func (server *TMCSAnonymousServer) handleSessionRegister(w http.ResponseWriter, 
 	server.tmcs.Users.Set(usr.Key.FingerPrint, usr, keyExpire)
 
 	w.WriteHeader(http.StatusOK)
-	pubkeyBuffer := bytes.NewBuffer(nil)
-	armorBuffer := bytes.NewBuffer(nil)
-	(contact.(*user.User)).Key.PublicKey[0].Serialize(pubkeyBuffer)
-	writer, err := armor.Encode(armorBuffer, "PGP PUBLIC KEY BLOCK", make(map[string]string))
+	armored, err := (contact.(*user.User)).Key.Armor()
 	if err != nil {
-		serverlog.Error("Failed to armor public key:", err.Error())
+		server.errorHandler(w, r, http.StatusInternalServerError)
+		return
 	}
-	_, err = writer.Write(pubkeyBuffer.Bytes())
-	if err != nil {
-		serverlog.Error("Failed to armor public key:", err.Error())
-	}
-	writer.Close()
 	responseData := make(map[string]string)
-	responseData["pubkey"] = (string)(armorBuffer.Bytes())
+	responseData["pubkey"] = armored
 	responseData["link"] = ""
 	w.Write((&responseMsg{
 		Error: tmcs_msg.ErrorCode_None,
 		Msg:   "",
 		Data:  responseData,
+	}).ToJSON())
+}
+
+func (server *TMCSAnonymousServer) keyHandler(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	fingerprint := vars["fingerprint"]
+	usr, ok := server.tmcs.Users.Get(fingerprint)
+	if !ok {
+		server.errorHandler(w, r, http.StatusNotFound)
+		return
+	}
+	armored, err := (usr.(*user.User)).Key.Armor()
+	if err != nil {
+		server.errorHandler(w, r, http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	w.Write((&responseMsg{
+		Error: tmcs_msg.ErrorCode_None,
+		Msg:   "",
+		Data:  armored,
 	}).ToJSON())
 }
 

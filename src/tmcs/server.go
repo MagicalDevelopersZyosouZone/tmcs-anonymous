@@ -62,15 +62,16 @@ func (server *TMCSAnonymousServer) Start() error {
 		Handler: server.router,
 	}
 	server.chClose = make(chan int)
-	server.fs = http.FileServer(http.Dir("../www/dist"))
+	server.fs = http.FileServer(http.Dir("./www/dist"))
 	server.sessionRegex = regexp.MustCompile(`^.*session/[0-9a-fA-F]+(/.*)?$`)
 	server.router.HandleFunc("/ws", server.handleWebSocket())
 	server.router.HandleFunc("/key/register", server.handleRegister()).Methods("POST")
 	server.router.HandleFunc("/chat/{sessionId}", server.handleJoin()).Methods("GET")
 	server.router.HandleFunc("/session/{fingerprint}/key/register", server.handleSessionRegister).Methods("POST")
+	server.router.HandleFunc("/key/{fingerprint}", server.keyHandler).Methods("GET")
 	server.router.HandleFunc("/session/{fingerprint}/ws", server.handleWebSocket())
 	server.router.PathPrefix("/session/{fingerprint}").HandlerFunc(server.handleSessionJoin())
-	server.router.PathPrefix("/").Handler(http.FileServer(http.Dir("../www/dist")))
+	server.router.PathPrefix("/").Handler(http.FileServer(http.Dir("./www/dist")))
 	go server.serverProc()
 	serverlog.Log("Server listened on", server.Addr)
 	<-server.chClose
