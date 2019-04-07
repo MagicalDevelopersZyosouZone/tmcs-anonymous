@@ -5,6 +5,7 @@ import { waitWebsocketOpen, readBlob, waitWebSocketMessage, waitWebSocketBinary,
 import { Message, MessageState } from "./message";
 import { User } from "./user";
 import { Session } from "./session";
+import { PromiseEventTrigger } from "./event";
 interface KeyOptions
 {
     bits?: 1024 | 2048 | 4096;
@@ -33,8 +34,8 @@ export default class TMCSAnonymous
     websocket: WebSocket;
     state: "none" | "registed" | "pending" | "ready" | "disconnected" = "none";
     timeout: 3000;
-    onNewSession: (session: Session) => void;
-    onContactRequest: (user: User) => boolean | Promise<boolean>;
+    onNewSession = new PromiseEventTrigger<Session>();
+    onContactRequest = new PromiseEventTrigger<User, boolean>();
     private messageArchive: Message[] = [null];
     private packageArchive: TMCSMsg.SignedMsg[] = [null];
     private get httpProtocol() { return this.useSSL ? "https://" : "http://" }
@@ -213,7 +214,7 @@ export default class TMCSAnonymous
             usr = new User("Anonymous", pubkey);
             if (this.onContactRequest)
             {
-                if (!await promiseOrNot(this.onContactRequest(usr)))
+                if (!await this.onContactRequest.trigger(usr))
                 {
                     this.sendPack(this.genReceipt(messages, TMCSMsg.MsgReceipt.MsgState.REJECT), sender);
                     return;
@@ -223,9 +224,9 @@ export default class TMCSAnonymous
 
                 let session = new Session(this);
                 session.users = [this.user, usr];
-                if (this.onNewSession)
-                    this.onNewSession(session);
                 this.sessions.push(session);
+                if (this.onNewSession)
+                    this.onNewSession.trigger(session);
 
                 return;
             }
@@ -247,13 +248,11 @@ export default class TMCSAnonymous
             {
                 session = new Session(this);
                 session.users = [this.user, usr];
-                if (this.onNewSession)
-                    this.onNewSession(session);
                 this.sessions.push(session);
+                this.onNewSession.trigger(session);
             }
-            if (session.onmessage)
-                session.onmessage(msg);
             session.messages.push(msg);
+            session.onMessage.trigger(msg);
         });
     }
     private receiptHandler(receipts: TMCSMsg.ReceiptPack)
@@ -264,8 +263,7 @@ export default class TMCSAnonymous
             if (msg)
             {
                 msg.state = receipt.getState() as any as MessageState;
-                if (msg.onStateChange)
-                    msg.onStateChange(msg.state);
+                msg.onStateChange.trigger(msg.state);
             }
         });
     }
@@ -278,7 +276,7 @@ export default class TMCSAnonymous
             const user = new User("Anonymous", key.keys[0]);
             this.contacts.set(user.fingerprint, user);
             const msg = new Message(this.user.fingerprint, user.fingerprint, this.user.pubkey.armor());
-            msg.onStateChange = (state) =>
+            msg.onStateChange.on((state) =>
             {
                 if (state === MessageState.Received)
                 {
@@ -286,13 +284,12 @@ export default class TMCSAnonymous
                     
                     const session = new Session(this);
                     session.users = [this.user, user];
-                    if (this.onNewSession)
-                        this.onNewSession(session);
                     this.sessions.push(session);
+                    this.onNewSession.trigger(session);
                 }
                 else
                     resolve(false);
-            };
+            });
             await msg.encrypt(user.pubkey, this.user.prvkey)
             await this.send(msg);
         });

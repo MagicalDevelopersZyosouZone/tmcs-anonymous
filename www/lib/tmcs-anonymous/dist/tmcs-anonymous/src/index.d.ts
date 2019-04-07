@@ -2,6 +2,7 @@ import * as openpgp from "openpgp";
 import { Message } from "./message";
 import { User } from "./user";
 import { Session } from "./session";
+import { PromiseEventTrigger } from "./event";
 interface KeyOptions {
     bits?: 1024 | 2048 | 4096;
     name?: string;
@@ -16,8 +17,8 @@ export default class TMCSAnonymous {
     websocket: WebSocket;
     state: "none" | "registed" | "pending" | "ready" | "disconnected";
     timeout: 3000;
-    onNewSession: (session: Session) => void;
-    onContactRequest: (user: User) => boolean | Promise<boolean>;
+    onNewSession: PromiseEventTrigger<Session, any>;
+    onContactRequest: PromiseEventTrigger<User, boolean>;
     private messageArchive;
     private packageArchive;
     private readonly httpProtocol;

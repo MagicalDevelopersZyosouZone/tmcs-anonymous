@@ -9,10 +9,12 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const message_1 = require("./message");
+const event_1 = require("./event");
 class Session {
     constructor(tmcs) {
         this.users = [];
         this.messages = [];
+        this.onMessage = new event_1.PromiseEventTrigger();
         this.tmcs = tmcs;
     }
     send(text) {

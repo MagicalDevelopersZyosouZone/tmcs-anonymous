@@ -1,4 +1,5 @@
 import * as openpgp from "openpgp";
+import { PromiseEventTrigger } from "./event";
 export declare enum MessageState {
     Pending = -2,
     Sended = -1,
@@ -19,7 +20,7 @@ export declare class Message {
     private _verified;
     readonly verified: boolean;
     readonly armored: string;
-    onStateChange: (state: MessageState) => void;
+    onStateChange: PromiseEventTrigger<MessageState, any>;
     constructor(sender: string, receiver: string, body: Uint8Array | string, id?: number);
     encrypt(pubkey: openpgp.key.Key, prvkey: openpgp.key.Key): Promise<Uint8Array>;
     decrypt(prvkey: openpgp.key.Key, pubkey?: openpgp.key.Key): Promise<string>;

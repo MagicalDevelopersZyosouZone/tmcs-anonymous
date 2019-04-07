@@ -25,11 +25,14 @@ const util_1 = require("./util");
 const message_1 = require("./message");
 const user_1 = require("./user");
 const session_1 = require("./session");
+const event_1 = require("./event");
 class TMCSAnonymous {
     constructor(address, useSSL = true) {
         this.sessions = [];
         this.contacts = new Map();
         this.state = "none";
+        this.onNewSession = new event_1.PromiseEventTrigger();
+        this.onContactRequest = new event_1.PromiseEventTrigger();
         this.messageArchive = [null];
         this.packageArchive = [null];
         const reg = /^(https?:\/\/)?(.+?)\/?$/;
@@ -189,7 +192,7 @@ class TMCSAnonymous {
                     throw new Error(`Unsigned contact request from {${sender}}`);
                 usr = new user_1.User("Anonymous", pubkey);
                 if (this.onContactRequest) {
-                    if (!(yield util_1.promiseOrNot(this.onContactRequest(usr)))) {
+                    if (!(yield this.onContactRequest.trigger(usr))) {
                         this.sendPack(this.genReceipt(messages, tmcs_proto_2.TMCSMsg.MsgReceipt.MsgState.REJECT), sender);
                         return;
                     }
@@ -197,9 +200,9 @@ class TMCSAnonymous {
                     this.sendPack(this.genReceipt(messages), sender);
                     let session = new session_1.Session(this);
                     session.users = [this.user, usr];
-                    if (this.onNewSession)
-                        this.onNewSession(session);
                     this.sessions.push(session);
+                    if (this.onNewSession)
+                        this.onNewSession.trigger(session);
                     return;
                 }
                 else {
@@ -214,13 +217,11 @@ class TMCSAnonymous {
                 if (!session) {
                     session = new session_1.Session(this);
                     session.users = [this.user, usr];
-                    if (this.onNewSession)
-                        this.onNewSession(session);
                     this.sessions.push(session);
+                    this.onNewSession.trigger(session);
                 }
-                if (session.onmessage)
-                    session.onmessage(msg);
                 session.messages.push(msg);
+                session.onMessage.trigger(msg);
             });
         });
     }
@@ -229,8 +230,7 @@ class TMCSAnonymous {
             const msg = this.messageArchive[receipt.getMsgid()];
             if (msg) {
                 msg.state = receipt.getState();
-                if (msg.onStateChange)
-                    msg.onStateChange(msg.state);
+                msg.onStateChange.trigger(msg.state);
             }
         });
     }
@@ -241,18 +241,17 @@ class TMCSAnonymous {
                 const user = new user_1.User("Anonymous", key.keys[0]);
                 this.contacts.set(user.fingerprint, user);
                 const msg = new message_1.Message(this.user.fingerprint, user.fingerprint, this.user.pubkey.armor());
-                msg.onStateChange = (state) => {
+                msg.onStateChange.on((state) => {
                     if (state === message_1.MessageState.Received) {
                         resolve(true);
                         const session = new session_1.Session(this);
                         session.users = [this.user, user];
-                        if (this.onNewSession)
-                            this.onNewSession(session);
                         this.sessions.push(session);
+                        this.onNewSession.trigger(session);
                     }
                     else
                         resolve(false);
-                };
+                });
                 yield msg.encrypt(user.pubkey, this.user.prvkey);
                 yield this.send(msg);
             }));

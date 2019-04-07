@@ -17,6 +17,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const openpgp = __importStar(require("openpgp"));
 const tmcs_proto_1 = require("tmcs-proto");
+const event_1 = require("./event");
 var MessageState;
 (function (MessageState) {
     MessageState[MessageState["Pending"] = -2] = "Pending";
@@ -30,6 +31,7 @@ var MessageState;
 class Message {
     constructor(sender, receiver, body, id = -1) {
         this._verified = false;
+        this.onStateChange = new event_1.PromiseEventTrigger();
         this.msgId = id;
         this.sender = sender;
         this.receiver = receiver;

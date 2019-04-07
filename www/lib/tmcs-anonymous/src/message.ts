@@ -1,5 +1,6 @@
 import * as openpgp from "openpgp";
 import { TMCSMsg } from "tmcs-proto";
+import { PromiseEventTrigger } from "./event";
 
 export enum MessageState
 {
@@ -24,7 +25,7 @@ export class Message
     private _verified = false;
     get verified() { return this._verified }
     get armored(): string { return this.armored as string; }
-    onStateChange: (state: MessageState) => void;
+    onStateChange = new PromiseEventTrigger<MessageState>();
 
     constructor(sender: string, receiver: string, body: Uint8Array | string, id: number=-1)
     {

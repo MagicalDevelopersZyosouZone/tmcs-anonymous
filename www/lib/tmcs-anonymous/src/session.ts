@@ -1,12 +1,13 @@
 import { User } from "./user";
 import { Message } from "./message";
 import TMCSAnonymous from ".";
+import { PromiseEventTrigger } from "./event";
 
 export class Session
 {
     users: User[] = [];
     messages: Message[] = [];
-    onmessage: (msg: Message) => void;
+    onMessage = new PromiseEventTrigger<Message>();
 
     private tmcs: TMCSAnonymous;
 
