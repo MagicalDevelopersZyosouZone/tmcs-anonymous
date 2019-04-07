@@ -7,6 +7,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+function __export(m) {
+    for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
+}
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
@@ -26,6 +29,9 @@ const message_1 = require("./message");
 const user_1 = require("./user");
 const session_1 = require("./session");
 const event_1 = require("./event");
+__export(require("./message"));
+__export(require("./user"));
+__export(require("./session"));
 class TMCSAnonymous {
     constructor(address, useSSL = true) {
         this.sessions = [];

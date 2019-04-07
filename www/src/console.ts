@@ -2,7 +2,7 @@ import { TestPublicKey, TestPrivateKey } from "./pgp-key";
 import * as openpgp from "openpgp";
 import tmcs_msg from "./proto/tmcs_msg_pb";
 import { waitWebSocketMessage, waitWebsocketOpen, readBlob, waitWebSocketBinary } from "./util";
-import TMCSAnonymous from "../lib/tmcs-anonymous/dist/tmcs-anonymous/src";
+import TMCSAnonymous from "tmcs-anonymous";
 
 export async function TMCSConsole()
 {
@@ -25,7 +25,7 @@ export async function TMCSConsole()
     (window as any).connect = async () =>
     {
         await tmcs.connect();
-        tmcs.onContactRequest = (usr) =>
+        tmcs.onContactRequest.on((usr) =>
         {
             console.log(`[Notice] Received a contact request from {${usr.fingerprint}}`);
             console.log(usr.pubkey.armor());
@@ -47,11 +47,11 @@ export async function TMCSConsole()
                     (window as any).reject = null;
                 }
             });
-        }
-        tmcs.onNewSession = (session) =>
+        });
+        tmcs.onNewSession.on((session) =>
         {
             console.log(`[Notice] A new session created.`);
-            session.onmessage = async (message) =>
+            session.onMessage.on(async (message) =>
             {
                 await message.decrypt(tmcs.user.prvkey, tmcs.contacts.get(message.sender).pubkey);
                 if (message.verified)
@@ -69,12 +69,12 @@ export async function TMCSConsole()
                 {
                     await session.send(text);
                 }
-            }
+            });
             (window as any).send = async (text: string) =>
             {
                 await session.send(text);
             }
-        };
+        });
         console.log(tmcs.state);
     }
     (window as any).quickStart = async() =>

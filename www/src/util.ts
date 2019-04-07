@@ -32,3 +32,14 @@ export async function waitWebSocketBinary(ws: WebSocket)
     return await waitWebSocketMessage(ws)
         .then(ev => readBlob(ev.data as Blob));
 }
+
+export function formatFingerprint(fingerprint: string)
+{
+    const slice = [];
+    for (let i = 0; i < fingerprint.length; i++)
+    {
+        slice.push(fingerprint.substr(i, 4).toUpperCase());
+        i += 4;
+    }
+    return slice.join("-");
+}

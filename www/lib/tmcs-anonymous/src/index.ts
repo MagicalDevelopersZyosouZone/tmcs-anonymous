@@ -6,6 +6,11 @@ import { Message, MessageState } from "./message";
 import { User } from "./user";
 import { Session } from "./session";
 import { PromiseEventTrigger } from "./event";
+
+export * from "./message";
+export * from "./user";
+export * from "./session";
+
 interface KeyOptions
 {
     bits?: 1024 | 2048 | 4096;
