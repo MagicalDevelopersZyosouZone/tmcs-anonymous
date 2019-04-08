@@ -39,6 +39,7 @@
     "google-protobuf": "^3.7.0",
     "linq": "^3.1.1",
     "node-fetch": "^2.3.0",
+    "openpgp": "^4.4.10",
     "react": "^16.8.6",
     "react-dom": "^16.8.6",
     "tmcs-anonymous": "./www/lib/tmcs-anonymous",

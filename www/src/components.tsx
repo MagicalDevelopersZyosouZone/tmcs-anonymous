@@ -65,7 +65,12 @@ export class Button extends React.Component<React.HTMLAttributes<HTMLDivElement>
     }
 }
 
-export class PageContainer extends React.Component<React.HTMLAttributes<HTMLDivElement>>
+export function IconText(props: { className?: string, children?: React.ReactDOM | string, icon: JSX.Element })
 {
-
+    return (
+        <p className={["icon-text", props.className?props.className:""].join(" ")}>
+            <span className="icon">{props.icon}</span>
+            <span className="text">{props.children}</span>
+        </p>
+    )
 }

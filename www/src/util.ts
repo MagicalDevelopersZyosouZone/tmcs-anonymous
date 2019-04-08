@@ -36,10 +36,9 @@ export async function waitWebSocketBinary(ws: WebSocket)
 export function formatFingerprint(fingerprint: string)
 {
     const slice = [];
-    for (let i = 0; i < fingerprint.length; i++)
+    for (let i = 0; i < fingerprint.length; i+=4)
     {
         slice.push(fingerprint.substr(i, 4).toUpperCase());
-        i += 4;
     }
     return slice.join("-");
 }

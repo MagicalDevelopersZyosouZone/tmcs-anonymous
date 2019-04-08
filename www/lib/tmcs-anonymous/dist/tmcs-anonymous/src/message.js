@@ -20,13 +20,14 @@ const tmcs_proto_1 = require("tmcs-proto");
 const event_1 = require("./event");
 var MessageState;
 (function (MessageState) {
-    MessageState[MessageState["Pending"] = -2] = "Pending";
-    MessageState[MessageState["Sended"] = -1] = "Sended";
-    MessageState[MessageState["Lost"] = 0] = "Lost";
-    MessageState[MessageState["Received"] = 1] = "Received";
+    MessageState[MessageState["Pending"] = 262144] = "Pending";
+    MessageState[MessageState["Sent"] = 262145] = "Sent";
+    MessageState[MessageState["Lost"] = 1] = "Lost";
+    MessageState[MessageState["Received"] = 524288] = "Received";
     MessageState[MessageState["Reject"] = 8] = "Reject";
     MessageState[MessageState["Timeout"] = 2] = "Timeout";
-    MessageState[MessageState["Failed"] = 4] = "Failed";
+    MessageState[MessageState["Failed"] = 0] = "Failed";
+    MessageState[MessageState["VerfifyFailed"] = 4] = "VerfifyFailed";
 })(MessageState = exports.MessageState || (exports.MessageState = {}));
 class Message {
     constructor(sender, receiver, body, id = -1) {

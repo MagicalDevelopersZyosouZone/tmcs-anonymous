@@ -1,0 +1,328 @@
+body{
+    margin: 0;
+    background: #444;
+    color: #EEE;
+    font-family: 'Open Sans', Roboto, Microsoft YaHei UI, Segoe UI, Tahoma, Geneva, Verdana, sans-serif;
+    overflow: hidden;
+}
+input,.input{
+    outline: none;
+}
+[contentEditable=true]:empty:before{
+    content:attr(data-placeholder);
+    color: rgba(255,255,255,0.5);
+    cursor: text;
+}
+.icon {
+    display: block;
+    height: 1em;
+}
+.icon svg{
+    height: 100%;
+}
+.tmcs{
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: flex-start;
+    align-items: stretch;
+}
+.side-menu{
+    width: 400px;
+    background-color: #555;
+    overflow: hidden;
+    box-shadow: 0px 0px 30px rgba(0,0,0,0.2);
+    user-select: none;
+}
+.chatting{
+    flex: 1 0;
+    position: relative;
+}
+.user-info{
+    background-color: #777;
+    padding: 2em 2em;
+    box-shadow: 0px 0px 40px rgba(0,0,0,0.08);
+}
+.user-info .name{
+    font-size: 1.6em;
+    margin-bottom: 0.5em;
+}
+.user-info .fingerprint{
+    font-size: 0.8em;
+    color: #CCC;
+    margin-bottom: 1em;
+}
+.user-info .keys *{
+    font-size: 0.8em;
+    background-color: #6fa6a9;
+    color: white;
+    padding: .2em 1em;
+    margin-right: 1em;
+    cursor: pointer;
+    border-radius: 2px;
+    
+}
+.user-info .keys *:hover{
+    background-color: #888;
+    color: #EEE ;
+    
+}
+
+.contacts{
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.contact{
+    padding: 1em 2em;
+    transition: all .1s;
+    cursor: pointer;
+}
+.contact:hover{
+    background-color: #444;
+}
+.contact .name{
+    font-size: 1em;
+    margin-bottom: .5em;
+}
+.contact .fingerprint{
+    font-size: .8em;
+    color: #BBB;
+    cursor: pointer;
+}
+.contact .fingerprint:hover{
+    color: #EEE;
+    text-decoration: underline;
+}
+.contact .fingerprint .icon{
+    fill: #BBB;
+    height: 1.4em;
+    margin-right: .5em;
+}
+.contact .fingerprint .text{
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.icon-text{
+    margin: 0;
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: flex-start;
+    align-items: center;
+}
+.icon-text .icon{
+    display: block;
+    height: 1em;
+}
+.icon-text .icon svg{
+    height: 100%;
+}
+
+.chat-session{
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-flow: column nowrap;
+    justify-content: flex-start;
+    align-items: stretch;
+}
+
+.chat-session .msg-scroller{
+    flex: 1 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    position: relative;
+    display: flex;
+    flex-flow: column-reverse nowrap;
+}
+
+.chat-session .input-area{
+    background-color: #777;
+    display: flex;
+    flex-flow: column nowrap;
+    overflow: hidden;
+}
+
+.input-area .tools-bar{
+    height: 2.4em;
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+    background-color: #777;
+    box-shadow: 0px 0px 10px rgba(0,0,0,0.5);
+    z-index: 1;
+    padding: 0 1em;
+}
+
+.input-area .tools-bar .icon{
+    height: 2em;
+    fill: #CCC;
+    transition: all .1s;
+    cursor: pointer;
+}
+
+.input-area .tools-bar .icon-button:hover{
+    fill: #82d5d8;
+}
+
+.input-area .input{
+    flex: 1 0;
+    min-height: 100px;
+    background-color: #4A4A4A;
+    box-sizing: border-box;
+    padding: .5em 1em;
+    transition: all .1s;
+}
+
+.input-area .input:focus{
+    background-color: #333;
+}
+
+.chat-session .msg-screen{
+    width: 100%;
+    flex-flow: column nowrap;
+    box-sizing: border-box;
+    padding: 1em;
+}
+
+.msg-card{
+    display: flex;
+    flex-flow: row nowrap;
+    overflow: hidden;
+    position: relative;
+    box-sizing: content-box;
+    
+    max-height: 0;
+    animation-name: msg-stretch;
+    animation-duration: 1s;
+    animation-play-state: running;
+    animation-fill-mode: forwards;
+    animation-timing-function: cubic-bezier(0.47, 0, 0.75, 0.72);
+}
+
+@keyframes msg-stretch{
+    from{
+        max-height: 0;
+    }
+    to{
+        max-height: 50em;
+    }
+}
+
+@keyframes msg-show-up{
+    from{
+        opacity: 0;
+        /*transform: translateX(-2em);*/
+    }
+    to{
+        opacity: 1;
+        /*transform: translateX(0);*/
+    }
+}
+
+.msg-card .wrapper{
+    margin: 1em 0;
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: flex-start;
+    align-items: flex-end;
+    opacity: 0;
+    
+    animation-name: msg-show-up;
+    animation-delay: .5s;
+    animation-duration: .2s;
+    animation-play-state: running;
+    animation-fill-mode: forwards;
+    animation-timing-function: cubic-bezier(0.4, 0, 1, 1);
+}
+
+.msg-card .card{
+    background-color: #999;
+    padding: .5em 1em;
+    border-radius: 1.2em;
+    border-top-left-radius: 0;
+}
+
+.msg-card.self .card{
+    background-color: #5F9B9D;
+    border-radius: 1.2em;
+    border-bottom-left-radius: 0;
+}
+
+.msg-card .icon{
+    height: 1.4em;
+    margin-left: .5em;
+    opacity: 0.5;
+    transition: all .2s;
+    cursor: pointer;
+}
+.msg-card .icon:hover{
+    opacity: 1;
+}
+
+.msg-card .verified{
+    fill: #52E952;
+}
+.msg-card .warn{
+    fill: #e6da35;
+}
+.msg-card .sending{
+    fill: rgba(255,255,255,0.8);
+    animation-name: rotation;
+    animation-duration: 1s;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+}
+.msg-card .failed{
+    fill: #ff532d;
+}
+.msg-card .sent{
+    fill: #52E952;
+}
+
+@keyframes rotation{
+    from{
+        transform: rotateZ(0deg);
+    }
+    to{
+        transform: rotateZ(360deg);
+    }
+}
+
+@media screen and (min-width:800px){
+    .chat-session .msg-screen{
+        padding-bottom: 3em;
+    }
+    .input-card{
+        margin-top: 2em;
+    }
+    .input-card .wrapper{
+        display: flex;
+        flex-flow: row nowrap;
+        
+    }
+    .input-card .card{
+        color: #EEE;
+        padding:  .5em 1em;
+        background-color: #5F9B9D;
+        border-radius: 1.2em;
+        border-bottom-left-radius: 0;
+        max-width: 80%;
+    }
+    .input-card .input{
+        min-width: 15em;
+        word-break: normal;
+    }
+    .input-card .icon{
+        height: 1.6em;
+        padding: .4em;
+        fill: rgba(255,255,255,0.5);
+    }
+    .chat-session .input-area{
+        display: none;
+    }
+}

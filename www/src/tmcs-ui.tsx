@@ -2,7 +2,8 @@ import React from "react";
 import { User, Session, Message, MessageState } from "tmcs-anonymous";
 import TMCSAnonymous from "tmcs-anonymous";
 import { formatFingerprint } from "./util";
-import { Dialog, Button } from "./components";
+import { Dialog, Button, IconText } from "./components";
+import { IconKey, IconVerify, IconWarn, IconSend, IconLoading, IconCheck, IconWarnNoBackground } from "./icons";
 
 interface TMCSAnonymousProps
 {
@@ -23,8 +24,8 @@ export class TMCSAnonymousUI extends React.Component<TMCSAnonymousProps, TMCSAno
         super(props);
         this.dialog = React.createRef();
         this.state = {
-            contacts: [],
-            activeSession: null
+            contacts: Array.from(this.props.tmcs.contacts.values()).filter(usr=>usr!=this.props.tmcs.user),
+            activeSession: props.tmcs.sessions[0]
         };
     }
     componentDidMount()
@@ -83,8 +84,8 @@ export class TMCSAnonymousUI extends React.Component<TMCSAnonymousProps, TMCSAno
                     <ul className="contacts">
                         {
                             this.state.contacts.map((contact, idx) => (
-                                <li>
-                                    <Contact user={contact} key={idx}></Contact>
+                                <li key={idx}>
+                                    <Contact user={contact}></Contact>
                                 </li>
                             ))
                         }
@@ -124,10 +125,7 @@ class Contact extends React.Component<ContactProps>
         return (
             <div className={["contact", this.props.className].join(" ")} onClick={()=>this.onClick()}>
                 <div className="name">{this.props.user.name}</div>
-                <div className="fingerprint">{formatFingerprint(this.props.user.fingerprint)}</div>
-                <div className="keys">
-                    <span className="pubkey">Public Key</span>
-                </div>
+                <IconText className="fingerprint" icon={(<IconKey/>)}>{formatFingerprint(this.props.user.fingerprint)}</IconText>
             </div>
         )
     }
@@ -151,10 +149,9 @@ class ChatSession extends React.Component<ChatScreenProps, ChatScreenState>
     {
         super(props);
         this.state = {
-            messages: [],
+            messages: props.session.messages,
             users: new Map()
         };
-        this.props.session
         props.session.users.forEach(usr => this.state.users.set(usr.fingerprint, {
             self: usr === this.props.tmcs.user,
             colorId: this.props.session.users.indexOf(usr),
@@ -163,8 +160,10 @@ class ChatSession extends React.Component<ChatScreenProps, ChatScreenState>
     }
     componentDidMount()
     {
-        this.props.session.onMessage.on(msg =>
+        this.props.session.onMessage.on(async (msg) =>
         {
+            if (msg.sender !== this.props.tmcs.user.fingerprint)
+                await msg.decrypt(this.props.tmcs.user.prvkey, this.props.tmcs.contacts.get(msg.sender).pubkey);
             this.setState({
                 messages: this.props.session.messages,
             });
@@ -174,13 +173,35 @@ class ChatSession extends React.Component<ChatScreenProps, ChatScreenState>
     {
         return (
             <div className="chat-session">
-                {
-                    this.state.messages.map((msg, idx) => (
-                        <MessageCard self={this.state.users.get(msg.sender).self} colorId={this.state.users.get(msg.sender).colorId} message={msg} key={idx}></MessageCard>
-                    ))
-                }
+                <div className="msg-scroller">
+                    <div className="msg-screen">
+                        {
+                            this.state.messages.map((msg, idx) => (
+                                <MessageCard self={this.state.users.get(msg.sender).self} colorId={this.state.users.get(msg.sender).colorId} message={msg} key={idx}></MessageCard>
+                            ))
+                        }
+                        {
+                            <div className="input-card">
+                                <div className="wrapper">
+                                    <div className="card">
+                                        <div className="input textbox" contentEditable={true} data-placeholder="Input Text here">
+                                        </div>
+                                    </div>
+                                    <IconSend className="icon-button button-send"/>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+                <div className="input-area">
+                    <div className="tools-bar">
+                        <IconSend className="icon-button button-send"/>
+                    </div>
+                    <div className="input textbox" contentEditable={true} data-placeholder="Input text here">
+                    </div>
+                </div>
             </div>
-        )
+        );
     }
 }
 
@@ -193,17 +214,51 @@ interface MessageCardProps
 
 interface MessageCardState
 {
+    verified: boolean | "waiting";
     state: MessageState
 }
 
 class MessageCard extends React.Component<MessageCardProps, MessageCardState>
 {
+    constructor(props: MessageCardProps)
+    {
+        super(props);
+        this.state = {
+            state: props.message.state,
+            verified: "waiting"
+        };
+    }
+    async componentDidMount()
+    {
+        if (this.props.self)
+        {
+            this.props.message.onStateChange.on(state =>
+            {
+                this.setState({
+                    state: state
+                });
+            });
+        }
+    }
     render()
     {
         return (
             <div className={["msg-card", this.props.self ? "self" : ""].join(' ')}>
                 <p className="wrapper">
-                    <span className="card">{this.props.message.body}</span>
+                    <div className="card">
+                        <span className="text">{this.props.message.body}</span>
+                    </div>
+                    {
+                        this.props.self
+                            ? this.state.state & MessageState.Pending
+                                ? <IconLoading className="sending" />
+                                : this.state.state & MessageState.Received
+                                    ? <IconCheck className="sent" />
+                                    : <IconWarn className="failed"/>
+                            : this.props.message.verified
+                                ? <IconVerify className="verified" />
+                                : <IconWarn className="warn" />
+                    }
                 </p>
             </div>
         );

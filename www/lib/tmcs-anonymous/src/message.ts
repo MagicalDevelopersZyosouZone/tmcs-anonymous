@@ -4,13 +4,14 @@ import { PromiseEventTrigger } from "./event";
 
 export enum MessageState
 {
-    Pending = -2,
-    Sended = -1,
+    Pending = TMCSMsg.MsgReceipt.MsgState.PENDING,
+    Sent = TMCSMsg.MsgReceipt.MsgState.SENT,
     Lost = TMCSMsg.MsgReceipt.MsgState.LOST,
     Received = TMCSMsg.MsgReceipt.MsgState.RECEIVED,
     Reject = TMCSMsg.MsgReceipt.MsgState.REJECT,
     Timeout = TMCSMsg.MsgReceipt.MsgState.TIMEOUT,
-    Failed = TMCSMsg.MsgReceipt.MsgState.VERIFYFAILED,
+    Failed = TMCSMsg.MsgReceipt.MsgState.FAILED,
+    VerfifyFailed = TMCSMsg.MsgReceipt.MsgState.VERIFYFAILED,
 }
 
 export class Message

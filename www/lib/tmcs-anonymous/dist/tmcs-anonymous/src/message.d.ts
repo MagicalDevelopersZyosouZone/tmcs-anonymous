@@ -1,13 +1,14 @@
 import * as openpgp from "openpgp";
 import { PromiseEventTrigger } from "./event";
 export declare enum MessageState {
-    Pending = -2,
-    Sended = -1,
-    Lost = 0,
-    Received = 1,
+    Pending = 262144,
+    Sent = 262145,
+    Lost = 1,
+    Received = 524288,
     Reject = 8,
     Timeout = 2,
-    Failed = 4
+    Failed = 0,
+    VerfifyFailed = 4
 }
 export declare class Message {
     msgId: number;
