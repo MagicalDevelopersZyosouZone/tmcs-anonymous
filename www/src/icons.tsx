@@ -60,3 +60,15 @@ export const IconWarnNoBackground = IconWrapper((
         <path d="M13,13H11V7H13M13,17H11V15H13M12,2Z" />
     </svg>
 ))
+
+export const IconCheckedBox = IconWrapper((
+    <svg viewBox="0 0 24 24">
+        <path d="M10,17L5,12L6.41,10.58L10,14.17L17.59,6.58L19,8M19,3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5C21,3.89 20.1,3 19,3Z" />
+    </svg>
+));
+
+export const IconUncheckedBox = IconWrapper((
+    <svg viewBox="0 0 24 24">
+        <path d="M19,3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5C21,3.89 20.1,3 19,3M19,5V19H5V5H19Z" />
+    </svg>
+));

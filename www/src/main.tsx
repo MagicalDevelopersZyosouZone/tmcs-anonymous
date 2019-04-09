@@ -5,6 +5,7 @@ import { TMCSAnonymousUI } from "./tmcs-ui";
 import TMCSAnonymous, { MessageState } from "tmcs-anonymous";
 import { User, Session, Message } from "tmcs-anonymous";
 import * as openpgp from "openpgp";
+import { TMCSAnonymousStartup } from "./startup";
 
 TMCSConsole();
 async function main()
@@ -45,8 +46,9 @@ async function main()
             await msg.encrypt(tmcs.user.pubkey, key.key);
             msg.state = MessageState.Pending;
             session.messages.push(msg);
-            session.onMessage.trigger(msg);   
-            setTimeout(() => {
+            session.onMessage.trigger(msg);
+            setTimeout(() =>
+            {
                 msg.onStateChange.trigger(Math.random() < 0.5 ? MessageState.Received : MessageState.Failed);
             }, 5000);
         }
@@ -58,7 +60,7 @@ async function main()
     (session.messages[2] as any)._verified = true;
     tmcs.sessions.push(session);
 
-    const element = (<TMCSAnonymousUI tmcs={tmcs}></TMCSAnonymousUI>);
+    const element = (<TMCSAnonymousStartup tmcs={tmcs} mode="new"></TMCSAnonymousStartup>);
     ReactDOM.render(element, document.querySelector("#root"));
     
 

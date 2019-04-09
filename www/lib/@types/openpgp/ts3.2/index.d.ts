@@ -1672,7 +1672,7 @@ export namespace key {
          * Returns userids
          * @returns array of userids
          */
-        getUserIds(): any[];
+        getUserIds(): string[];
 
         /**
          * Returns true if this is a public key
@@ -1896,6 +1896,8 @@ export namespace key {
      */
     class User {
         constructor();
+
+        userId: packet.Userid;
 
         /**
          * Transforms structured user data to packetlist
@@ -4631,12 +4633,12 @@ export namespace util {
     /**
      * Format user id for internal use.
      */
-    function formatUserId(): void;
+    function formatUserId(id: { name: string, email: string; comment: string }): string;
 
     /**
      * Parse user id.
      */
-    function parseUserId(): void;
+    function parseUserId(userId: string): { name: string, email: string; comment: string };
 
     /**
      * Normalize line endings to \r\n
@@ -4805,7 +4807,7 @@ export function getWorker(): worker.async_proxy.AsyncProxy | null;
  */
 export function destroyWorker(): void;
 
-export interface UserID {
+export interface UserId {
     name: string;
     email: string;
 }
@@ -4814,7 +4816,7 @@ export interface KeyOptions {
     /**
      * array of user IDs e.g. [ { name:'Phil Zimmermann', email:'phil@openpgp.org' }]
      */
-    userIds: UserID[];
+    userIds: UserId[];
     /**
      * (optional) The passphrase used to encrypt the resulting private key
      */
@@ -4958,11 +4960,11 @@ export interface EncryptOptions {
     /**
      * (optional) array of user IDs to sign with, one per key in `privateKeys`, e.g. [ { name:'Steve Sender', email:'steve@openpgp.org' }]
      */
-    fromUserIds?: UserID[];
+    fromUserIds?: UserId[];
     /**
      * (optional) array of user IDs to encrypt for, one per key in `publicKeys`, e.g. [ { name:'Robert Receiver', email:'robert@openpgp.org' }]
      */
-    toUserIds?: UserID[]
+    toUserIds?: UserId[]
 }
 
 export interface EncryptResult {
@@ -5091,7 +5093,7 @@ export interface SignOptions {
     /**
      *  (optional) array of user IDs to sign with, one per key in `privateKeys`, e.g. [ { name:'Steve Sender', email:'steve@openpgp.org' }]
      */
-    fromUserIds?: UserID[]
+    fromUserIds?: UserId[]
 }
 
 export interface SignResult {
