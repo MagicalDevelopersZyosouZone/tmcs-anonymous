@@ -42,3 +42,8 @@ export function formatFingerprint(fingerprint: string)
     }
     return slice.join("-");
 }
+
+export function sleep(time:number)
+{
+    return new Promise(resolve => setTimeout(resolve, time));
+}

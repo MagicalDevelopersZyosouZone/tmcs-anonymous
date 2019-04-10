@@ -37,6 +37,7 @@ class TMCSAnonymous {
         this.sessions = [];
         this.contacts = new Map();
         this.state = "none";
+        this.inviteLink = "";
         this.onNewSession = new event_1.PromiseEventTrigger();
         this.onContactRequest = new event_1.PromiseEventTrigger();
         this.messageArchive = [null];
@@ -101,7 +102,8 @@ class TMCSAnonymous {
                 return result.data.pubkey;
             }
             else if (result.data.link !== "") {
-                return `${this.httpBaseAddr}/chat/${result.data.link}`;
+                this.inviteLink = `${this.httpBaseAddr}/chat/${result.data.link}`;
+                return this.inviteLink;
             }
             return null;
         });
@@ -276,6 +278,19 @@ class TMCSAnonymous {
             const msgPack = new tmcs_proto_2.TMCSMsg.MessagePack();
             msgPack.setMsgList([msg]);
             yield this.sendPack(msgPack, message.receiver);
+        });
+    }
+    getSessionKey() {
+        return __awaiter(this, void 0, void 0, function* () {
+            try {
+                const response = (yield fetch(`${this.httpBaseAddr}/key`).then(r => r.json()));
+                if (response.error !== tmcs_proto_1.default.TMCSError.ErrorCode.NONE)
+                    return null;
+                return response.data;
+            }
+            catch (_a) {
+                return null;
+            }
         });
     }
     sendPack(pack, receiver) {

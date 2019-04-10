@@ -52,7 +52,6 @@ export class Button extends React.Component<ButtonProps, ButtonState>
         this.state = {
             state: props.enabled === false ? "disable" : "normal"
         };
-        console.log(this.state.state);
     }
     onMouseDown()
     {
@@ -86,13 +85,19 @@ export class Button extends React.Component<ButtonProps, ButtonState>
     }
 }
 
-export function IconText(props: { className?: string, children?: React.ReactDOM | string, icon: JSX.Element })
+interface IconTextProps extends React.HTMLAttributes<HTMLSpanElement>
 {
+    icon: React.ReactNode;
+}
+export function IconText(props: IconTextProps)
+{
+    let { className, children, icon, ...others } = props;
+    className = ["icon-text", className].join(" ");
     return (
-        <p className={["icon-text", props.className ? props.className : ""].join(" ")}>
-            <span className="icon">{props.icon}</span>
-            <span className="text">{props.children}</span>
-        </p>
+        <span className={className} {...others}>
+            <span className="icon">{icon}</span>
+            <span className="text">{children}</span>
+        </span>
     )
 }
 
@@ -129,6 +134,9 @@ export class Guide extends React.Component<GuideProps, GuideState>
             nextEnable: true,
             nextLabel: DefaultNextLabel,
         }
+        this.pages.length = React.Children.map(this.props.children, (child => child as React.ReactElement))
+            .filter(element => GuidePage.isPrototypeOf(element.type))
+            .length;
     }
     setNext(enable: boolean, lable: string = DefaultNextLabel)
     {
@@ -191,27 +199,17 @@ export class Guide extends React.Component<GuideProps, GuideState>
     }
     componentDidMount()
     {
-        /*React.Children.forEach(this.props.children, (child, idx) =>
-        {
-            const props = (child as React.ReactElement).props as GuidePageProps;
-            if (props.hasOwnProperty("_guide"))
-            {
-                props._guide = this;
-                props._callback = p => this.onPageCreate(p, idx);
-            }
-            console.log(child);
-        });*/
-        //this.pages[this.state.activePage].onPageActive();
     }
     render()
     {
-
         return (
             <div className="guide">
                 <div className="content">
                     {
                         Children.map(this.props.children, (child, idx) =>
                         {
+                            if (idx > this.state.activePage)
+                                return null;
                             const element = child as React.ReactElement;
                             const Type = element.type;
                             const props = { _guide: this, _callback: (p: any) => this.onPageCreate(p, idx), ...element.props };
@@ -386,7 +384,6 @@ export class CheckGroup extends React.Component<CheckGroupProps, { checkedIdx: n
     }
     onCheckChanged(value: any, idx: number)
     {
-        console.log(idx);
         this.props.onChange && this.props.onChange(value);
         this.setState({ checkedIdx: idx });
     }

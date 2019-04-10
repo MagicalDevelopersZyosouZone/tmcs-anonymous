@@ -20,6 +20,7 @@ export default class TMCSAnonymous {
     websocket: WebSocket;
     state: "none" | "registed" | "pending" | "ready" | "disconnected";
     timeout: 3000;
+    inviteLink: string;
     onNewSession: PromiseEventTrigger<Session, any>;
     onContactRequest: PromiseEventTrigger<User, boolean>;
     private messageArchive;
@@ -30,7 +31,7 @@ export default class TMCSAnonymous {
     constructor(address: string, useSSL?: boolean);
     setkey(pubkeyArmored: string, prvkeyArmored: string): Promise<void>;
     generateKey(options?: KeyOptions): Promise<[openpgp.key.Key, openpgp.key.Key]>;
-    registerKey(): Promise<any>;
+    registerKey(): Promise<string>;
     sign(buffer: Uint8Array): Promise<Uint8Array>;
     connect(): Promise<void>;
     private handle;
@@ -39,6 +40,7 @@ export default class TMCSAnonymous {
     private receiptHandler;
     contactRequest(pubkey: string): Promise<boolean>;
     send(message: Message): Promise<void>;
+    getSessionKey(): Promise<string>;
     private sendPack;
     private genReceipt;
 }

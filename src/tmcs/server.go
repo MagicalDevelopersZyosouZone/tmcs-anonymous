@@ -68,7 +68,7 @@ func (server *TMCSAnonymousServer) Start() error {
 	server.router.HandleFunc("/key/register", server.handleRegister()).Methods("POST")
 	server.router.HandleFunc("/chat/{sessionId}", server.handleJoin()).Methods("GET")
 	server.router.HandleFunc("/session/{fingerprint}/key/register", server.handleSessionRegister).Methods("POST")
-	server.router.HandleFunc("/key/{fingerprint}", server.keyHandler).Methods("GET")
+	server.router.HandleFunc("/session/{fingerprint}/key", server.keyHandler).Methods("GET")
 	server.router.HandleFunc("/session/{fingerprint}/ws", server.handleWebSocket())
 	server.router.PathPrefix("/session/{fingerprint}").HandlerFunc(server.handleSessionJoin())
 	server.router.PathPrefix("/").Handler(http.FileServer(http.Dir("./www/dist")))

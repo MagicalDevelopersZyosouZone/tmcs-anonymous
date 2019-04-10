@@ -23,11 +23,11 @@ interface RegisterParam
     pubkey: string;
     sign: string;
 }
-interface ServerResponse
+interface ServerResponse<T = any>
 {
     error: number;
     msg: string;
-    data: any;
+    data: T;
 }
 export default class TMCSAnonymous
 {
@@ -39,6 +39,7 @@ export default class TMCSAnonymous
     websocket: WebSocket;
     state: "none" | "registed" | "pending" | "ready" | "disconnected" = "none";
     timeout: 3000;
+    inviteLink = "";
     onNewSession = new PromiseEventTrigger<Session>();
     onContactRequest = new PromiseEventTrigger<User, boolean>();
     private messageArchive: Message[] = [null];
@@ -82,7 +83,7 @@ export default class TMCSAnonymous
         await this.setkey(key.publicKeyArmored, key.privateKeyArmored);
         return [this.user.pubkey, this.user.prvkey];
     }
-    async registerKey()
+    async registerKey(): Promise<string>
     {
         const registerParam: RegisterParam = {
             name: "Anonymous",
@@ -108,7 +109,8 @@ export default class TMCSAnonymous
         }
         else if (result.data.link !== "")
         {
-            return `${this.httpBaseAddr}/chat/${result.data.link}`;
+            this.inviteLink = `${this.httpBaseAddr}/chat/${result.data.link}`;
+            return this.inviteLink;
         }
         return null;
     }
@@ -314,6 +316,21 @@ export default class TMCSAnonymous
         const msgPack = new TMCSMsg.MessagePack();
         msgPack.setMsgList([msg]);
         await this.sendPack(msgPack, message.receiver);
+    }
+
+    async getSessionKey(): Promise<string>
+    {
+        try
+        {
+            const response = (await fetch(`${this.httpBaseAddr}/key`).then(r => r.json())) as ServerResponse<string>;
+            if (response.error !== tmcs_msg.TMCSError.ErrorCode.NONE)
+                return null;
+            return response.data;
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     private async sendPack(pack: TMCSMsg.ReceiptPack | TMCSMsg.MessagePack, receiver: string)
