@@ -18,7 +18,7 @@ export default class TMCSAnonymous {
     remoteAddress: string;
     useSSL: boolean;
     websocket: WebSocket;
-    state: "none" | "registed" | "pending" | "ready" | "disconnected";
+    state: "none" | "registed" | "connecting" | "ready" | "disconnected";
     timeout: 3000;
     inviteLink: string;
     onNewSession: PromiseEventTrigger<Session, any>;

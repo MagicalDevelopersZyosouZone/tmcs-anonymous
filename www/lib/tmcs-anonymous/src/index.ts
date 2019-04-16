@@ -37,7 +37,7 @@ export default class TMCSAnonymous
     remoteAddress: string;
     useSSL: boolean;
     websocket: WebSocket;
-    state: "none" | "registed" | "pending" | "ready" | "disconnected" = "none";
+    state: "none" | "registed" | "connecting" | "ready" | "disconnected" = "none";
     timeout: 3000;
     inviteLink = "";
     onNewSession = new PromiseEventTrigger<Session>();
@@ -127,6 +127,12 @@ export default class TMCSAnonymous
     }
     async connect()
     {
+        if (this.state === "connecting")
+            throw new Error("Connecting");
+        else if (this.state === "ready")
+            this.websocket.close();
+        
+        this.state = "connecting";
         this.websocket = new WebSocket(`${this.wsProtocol}${this.remoteAddress}/ws`);
         await waitWebsocketOpen(this.websocket);
 
@@ -156,7 +162,7 @@ export default class TMCSAnonymous
         // <- Comfirm
         buffer = await waitWebSocketBinary(this.websocket, this.timeout);
         const confirm = tmcs_msg.TMCSMsg.ServerHandShake.deserializeBinary(buffer);
-        this.state = "pending";
+        this.state = "ready";
 
         this.websocket.onmessage = (ev) => this.handle(ev);
     }

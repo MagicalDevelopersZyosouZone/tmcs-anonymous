@@ -324,7 +324,8 @@ class WaitConfirm extends GuidePage<GuidePageProps & { tmcs: TMCSAnonymous, join
     {
         this.guide.setNext(false);
         this.guide.setBack(false);
-        await sleep(3000);
+        if (this.props.tmcs.state !== "ready")
+            await this.props.tmcs.connect();
         const result = await this.props.tmcs.contactRequest(this.props.joinKey);
         if (!result)
             this.setState({

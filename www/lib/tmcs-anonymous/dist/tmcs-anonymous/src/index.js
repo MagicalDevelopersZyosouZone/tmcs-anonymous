@@ -122,6 +122,11 @@ class TMCSAnonymous {
     }
     connect() {
         return __awaiter(this, void 0, void 0, function* () {
+            if (this.state === "connecting")
+                throw new Error("Connecting");
+            else if (this.state === "ready")
+                this.websocket.close();
+            this.state = "connecting";
             this.websocket = new WebSocket(`${this.wsProtocol}${this.remoteAddress}/ws`);
             yield util_1.waitWebsocketOpen(this.websocket);
             // Handshake ->
@@ -147,7 +152,7 @@ class TMCSAnonymous {
             // <- Comfirm
             buffer = yield util_1.waitWebSocketBinary(this.websocket, this.timeout);
             const confirm = tmcs_proto_1.default.TMCSMsg.ServerHandShake.deserializeBinary(buffer);
-            this.state = "pending";
+            this.state = "ready";
             this.websocket.onmessage = (ev) => this.handle(ev);
         });
     }
