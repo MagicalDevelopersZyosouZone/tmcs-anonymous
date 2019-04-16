@@ -4793,7 +4793,6 @@ export interface WorkerOptions {
  * @param n number of workers to initialize
  * @param workers alternative to path parameter: web workers initialized with 'openpgp.worker.js'
  */
-export function initWorker(path: string, n?: number, workers?: any[]): void;
 export function initWorker(options: WorkerOptions): void;
 
 /**
@@ -4807,7 +4806,7 @@ export function getWorker(): worker.async_proxy.AsyncProxy | null;
  */
 export function destroyWorker(): void;
 
-export interface UserId {
+export interface UserID {
     name: string;
     email: string;
 }
@@ -4816,7 +4815,7 @@ export interface KeyOptions {
     /**
      * array of user IDs e.g. [ { name:'Phil Zimmermann', email:'phil@openpgp.org' }]
      */
-    userIds: UserId[];
+    userIds: UserID[];
     /**
      * (optional) The passphrase used to encrypt the resulting private key
      */
@@ -4960,11 +4959,11 @@ export interface EncryptOptions {
     /**
      * (optional) array of user IDs to sign with, one per key in `privateKeys`, e.g. [ { name:'Steve Sender', email:'steve@openpgp.org' }]
      */
-    fromUserIds?: UserId[];
+    fromUserIds?: UserID[];
     /**
      * (optional) array of user IDs to encrypt for, one per key in `publicKeys`, e.g. [ { name:'Robert Receiver', email:'robert@openpgp.org' }]
      */
-    toUserIds?: UserId[]
+    toUserIds?: UserID[]
 }
 
 export interface EncryptResult {
@@ -5093,7 +5092,7 @@ export interface SignOptions {
     /**
      *  (optional) array of user IDs to sign with, one per key in `privateKeys`, e.g. [ { name:'Steve Sender', email:'steve@openpgp.org' }]
      */
-    fromUserIds?: UserId[]
+    fromUserIds?: UserID[]
 }
 
 export interface SignResult {

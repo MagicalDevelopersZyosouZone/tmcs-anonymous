@@ -23,7 +23,7 @@ func NewUser(name string, key *Key, tmcs iTMCSAnonymous) *User {
 	user.BlackList = make(map[string]string)
 	key.User = user
 	user.Key = key
-	user.ContactLimit = 1
+	user.ContactLimit = 100
 	user.chPost = make(chan *SessionMessage, 100)
 	user.tmcs = tmcs
 

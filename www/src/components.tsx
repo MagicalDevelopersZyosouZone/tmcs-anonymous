@@ -1,5 +1,5 @@
 import React, { Children } from "react";
-import { IconCheckedBox, IconUncheckedBox } from "./icons";
+import { IconCheckedBox, IconUncheckedBox, IconCopy, IconCheck } from "./icons";
 
 interface DialogState
 {
@@ -124,6 +124,7 @@ export class Guide extends React.Component<GuideProps, GuideState>
     onNext?: () => boolean;
     onBack?: () => boolean;
     pages: GuidePage[] = [];
+    private pageArgs = {};
     constructor(props: GuideProps)
     {
         super(props);
@@ -134,9 +135,7 @@ export class Guide extends React.Component<GuideProps, GuideState>
             nextEnable: true,
             nextLabel: DefaultNextLabel,
         }
-        this.pages.length = React.Children.map(this.props.children, (child => child as React.ReactElement))
-            .filter(element => GuidePage.isPrototypeOf(element.type))
-            .length;
+        this.pages.length = React.Children.count(props.children);
     }
     setNext(enable: boolean, lable: string = DefaultNextLabel)
     {
@@ -146,8 +145,9 @@ export class Guide extends React.Component<GuideProps, GuideState>
     {
         this.setState({ backEnable: enable, backLabel: lable });
     }
-    next()
+    next(args: any = null)
     {
+        this.pageArgs = args;
         if (this.onNext && !this.onNext())
             return;
         let n = this.state.activePage + 1;
@@ -167,8 +167,9 @@ export class Guide extends React.Component<GuideProps, GuideState>
         else if (this.props.onFinish)
             this.props.onFinish();
     }
-    back()
+    back(args: any = null)
     {
+        this.pageArgs = args;
         if (this.onBack && !this.onBack)
             return;
         let n = this.state.activePage - 1;
@@ -195,10 +196,11 @@ export class Guide extends React.Component<GuideProps, GuideState>
     componentDidUpdate(prevProps: GuideProps, prevState: GuideState)
     {
         if (prevState.activePage != this.state.activePage)
-            this.pages[this.state.activePage] && this.pages[this.state.activePage].onPageActive && this.pages[this.state.activePage].onPageActive();
+            this.pages[this.state.activePage] && this.pages[this.state.activePage].onPageActive && this.pages[this.state.activePage].onPageActive(this.pageArgs);
     }
     componentDidMount()
     {
+        this.pages[this.state.activePage] && this.pages[this.state.activePage].onPageActive && this.pages[this.state.activePage].onPageActive();
     }
     render()
     {
@@ -250,7 +252,7 @@ export class GuidePage<P extends GuidePageProps = GuidePageProps, S={}> extends 
         super(props);
         this.props._callback && this.props._callback(this);
     }
-    onPageActive() { }
+    onPageActive(args: any = null) { }
     componentWillMount()
     {
         this.props._callback && this.props._callback(this);
@@ -408,6 +410,53 @@ export class CheckGroup extends React.Component<CheckGroupProps, { checkedIdx: n
                         ))
                 }
             </HeaderComponent>
+        )
+    }
+}
+
+interface CopyToClipboardProps extends React.HTMLAttributes<HTMLDivElement>
+{
+    text?: string;
+}
+export class CopyToClipboard extends React.Component<CopyToClipboardProps, { copied: boolean }>
+{
+    constructor(props: CopyToClipboardProps)
+    {
+        super(props);
+        this.state = { copied: false };
+    }
+    async copy()
+    {
+        if (this.props.text)
+        {
+            await (navigator as any).clipboard.writeText(await this.props.text);
+        }
+        else
+        {
+            (this.refs["content"] as HTMLInputElement).select()
+            document.execCommand("copy");
+        }
+        this.setState({ copied: true });
+    }
+    render()
+    {
+        let { className, onClick, children, text, ...others } = this.props;
+        className = ["copy-to-clipboard", className].join(" ");
+        return (
+            <div className={className} onClick={()=>this.props.text?this.copy():null} {...others}>
+                {
+                    this.props.text
+                        ? <span className="content" ref="content">{children}</span>
+                        : <input type="text" className="content" ref="content" value={this.props.text} readOnly></input>
+                }
+                <span className="icon-wrapper" onClick={()=>this.copy()} >
+                    {
+                        this.state.copied
+                            ? <IconCheck />
+                            : <IconCopy />
+                    }
+                </span>
+            </div>
         )
     }
 }

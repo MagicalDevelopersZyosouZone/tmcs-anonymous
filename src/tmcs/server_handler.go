@@ -28,7 +28,7 @@ type responseMsg struct {
 	Data  interface{}
 }
 
-const keyExpire = 300000
+const keyExpire = 30000000
 
 func (msg *responseMsg) ToJSON() []byte {
 	obj := make(map[string]interface{})

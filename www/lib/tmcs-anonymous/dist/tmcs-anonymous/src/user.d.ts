@@ -8,5 +8,5 @@ export declare class User {
     readonly fingerprint: string;
     readonly name: string;
     readonly email: string;
-    constructor(name: string, pubkey: openpgp.key.Key, prvkey?: openpgp.key.Key);
+    constructor(pubkey: openpgp.key.Key, prvkey?: openpgp.key.Key);
 }

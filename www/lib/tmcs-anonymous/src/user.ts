@@ -11,7 +11,7 @@ export class User
     get name(): string { return openpgp.util.parseUserId(this.keyid).name }
     get email(): string { return openpgp.util.parseUserId(this.keyid).email }
 
-    constructor(name: string, pubkey: openpgp.key.Key, prvkey: openpgp.key.Key = null)
+    constructor(pubkey: openpgp.key.Key, prvkey: openpgp.key.Key = null)
     {
         this.keyid = pubkey.getUserIds()[0];
         this.pubkey = pubkey;

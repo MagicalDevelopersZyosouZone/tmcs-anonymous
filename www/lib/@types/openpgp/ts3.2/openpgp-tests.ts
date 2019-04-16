@@ -72,7 +72,6 @@ Promise.all(promises).then(function (values) {
     // failure
 });
 
-openpgp.initWorker('openpgp.worker.js');
 openpgp.initWorker({
     path: 'openpgp.worker.js'
 });

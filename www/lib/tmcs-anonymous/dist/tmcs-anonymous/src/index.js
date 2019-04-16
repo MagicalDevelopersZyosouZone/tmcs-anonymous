@@ -60,7 +60,7 @@ class TMCSAnonymous {
     get httpBaseAddr() { return `${this.httpProtocol}${this.remoteAddress}`; }
     setkey(pubkeyArmored, prvkeyArmored) {
         return __awaiter(this, void 0, void 0, function* () {
-            this.user = new user_1.User("Anonymous", (yield openpgp.key.readArmored(pubkeyArmored)).keys[0]);
+            this.user = new user_1.User((yield openpgp.key.readArmored(pubkeyArmored)).keys[0]);
             if (prvkeyArmored)
                 this.user.prvkey = (yield openpgp.key.readArmored(prvkeyArmored)).keys[0];
         });
@@ -198,7 +198,7 @@ class TMCSAnonymous {
                 yield request.decrypt(this.user.prvkey, pubkey);
                 if (!request.verified)
                     throw new Error(`Unsigned contact request from {${sender}}`);
-                usr = new user_1.User("Anonymous", pubkey);
+                usr = new user_1.User(pubkey);
                 if (this.onContactRequest) {
                     if (!(yield this.onContactRequest.trigger(usr))) {
                         this.sendPack(this.genReceipt(messages, tmcs_proto_2.TMCSMsg.MsgReceipt.MsgState.REJECT), sender);
@@ -246,7 +246,7 @@ class TMCSAnonymous {
         return __awaiter(this, void 0, void 0, function* () {
             return new Promise((resolve, reject) => __awaiter(this, void 0, void 0, function* () {
                 const key = yield openpgp.key.readArmored(pubkey);
-                const user = new user_1.User("Anonymous", key.keys[0]);
+                const user = new user_1.User(key.keys[0]);
                 this.contacts.set(user.fingerprint, user);
                 const msg = new message_1.Message(this.user.fingerprint, user.fingerprint, this.user.pubkey.armor());
                 msg.onStateChange.on((state) => {

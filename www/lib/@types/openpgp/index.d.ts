@@ -1603,7 +1603,7 @@ export namespace key {
          * Returns userids
          * @returns array of userids
          */
-        getUserIds(): any[];
+        getUserIds(): string[];
 
         /**
          * Returns true if this is a public key
@@ -1827,6 +1827,8 @@ export namespace key {
      */
     class User {
         constructor();
+
+        userId: packet.Userid;
 
         /**
          * Transforms structured user data to packetlist
@@ -4560,12 +4562,12 @@ export namespace util {
     /**
      * Format user id for internal use.
      */
-    function formatUserId(): void;
+    function formatUserId(id: { name: string, email: string; comment: string }): string;
 
     /**
      * Parse user id.
      */
-    function parseUserId(): void;
+    function parseUserId(userId: string): { name: string, email: string; comment: string };
 
     /**
      * Normalize line endings to \r\n
@@ -4699,7 +4701,7 @@ export namespace worker {
     }
 }
 
-export interface WorkerOptions{
+export interface WorkerOptions {
     /**
      * relative path to the worker scripts, default: 'openpgp.worker.js'
      */
@@ -4720,7 +4722,6 @@ export interface WorkerOptions{
  * @param n number of workers to initialize
  * @param workers alternative to path parameter: web workers initialized with 'openpgp.worker.js'
  */
-export function initWorker(path: string, n?: number, workers?: any[]): void;
 export function initWorker(options: WorkerOptions): void;
 
 /**

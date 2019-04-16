@@ -9,7 +9,7 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const openpgp = __importStar(require("openpgp"));
 class User {
-    constructor(name, pubkey, prvkey = null) {
+    constructor(pubkey, prvkey = null) {
         this.messages = [];
         this.keyid = pubkey.getUserIds()[0];
         this.pubkey = pubkey;

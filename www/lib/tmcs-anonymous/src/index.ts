@@ -66,7 +66,7 @@ export default class TMCSAnonymous
     }
     async setkey(pubkeyArmored: string, prvkeyArmored: string)
     {
-        this.user = new User("Anonymous", (await openpgp.key.readArmored(pubkeyArmored)).keys[0])
+        this.user = new User((await openpgp.key.readArmored(pubkeyArmored)).keys[0])
         if (prvkeyArmored)
             this.user.prvkey = (await openpgp.key.readArmored(prvkeyArmored)).keys[0];
     }
@@ -218,7 +218,7 @@ export default class TMCSAnonymous
             if (!request.verified)
                 throw new Error(`Unsigned contact request from {${sender}}`);
             
-            usr = new User("Anonymous", pubkey);
+            usr = new User(pubkey);
             if (this.onContactRequest)
             {
                 if (!await this.onContactRequest.trigger(usr))
@@ -280,7 +280,7 @@ export default class TMCSAnonymous
         return new Promise(async (resolve, reject) =>
         {
             const key = await openpgp.key.readArmored(pubkey);
-            const user = new User("Anonymous", key.keys[0]);
+            const user = new User(key.keys[0]);
             this.contacts.set(user.fingerprint, user);
             const msg = new Message(this.user.fingerprint, user.fingerprint, this.user.pubkey.armor());
             msg.onStateChange.on((state) =>

@@ -1,10 +1,11 @@
 import React from "react";
 import TMCSAnonymous from "tmcs-anonymous";
-import { Guide, IconText, Button, GuidePage, GuidePageProps, TextBox, CheckBox, CheckGroup, HeaderComponent } from "./components";
+import { Guide, IconText, Button, GuidePage, GuidePageProps, TextBox, CheckBox, CheckGroup, HeaderComponent, CopyToClipboard } from "./components";
 import * as openpgp from "openpgp";
-import { IconLoading, IconCopy, IconError } from "./icons";
+import { IconLoading, IconCopy, IconError, IconCross } from "./icons";
 import { formatFingerprint, sleep } from "./util";
 import qrcode from "qrcode";
+import { User } from "tmcs-anonymous";
 
 interface StartupProps
 {
@@ -20,17 +21,27 @@ export class TMCSAnonymousStartup extends React.Component<StartupProps>
     {
         return (
             <div className="startup">
-                <Guide onFinish={()=>this.props.onComplete&&this.props.onComplete()}>
-                    <div className="wrapper">
-                        <header>TMCS Anonymous</header>
-                        <p>A PGP based anonymous IM platform.</p>
-                        <a href="">more</a>
-                    </div>
-                    <KeyGen tmcs={this.props.tmcs} />
-                    <KeyResult tmcs={this.props.tmcs} />
-                    <SignUp tmcs={this.props.tmcs} />
-                    <ShareLink tmcs={this.props.tmcs}/>
-                </Guide>
+                {
+                    this.props.joinKey
+                        ? <Guide onFinish={() => this.props.onComplete && this.props.onComplete()}>
+                            <JoinPage tmcs={this.props.tmcs} pubkey={this.props.joinKey}/>
+                            <KeyGen tmcs={this.props.tmcs} />
+                            <KeyResult tmcs={this.props.tmcs} />
+                            <SignUp tmcs={this.props.tmcs} />
+                            <WaitConfirm tmcs={this.props.tmcs} joinKey={this.props.joinKey}/>
+                        </Guide>
+                        : <Guide onFinish={() => this.props.onComplete && this.props.onComplete()}>
+                            <div className="wrapper">
+                                <header>TMCS Anonymous</header>
+                                <p>A PGP based anonymous IM platform.</p>
+                                <a href="">more</a>
+                            </div>
+                            <KeyGen tmcs={this.props.tmcs} />
+                            <KeyResult tmcs={this.props.tmcs} />
+                            <SignUp tmcs={this.props.tmcs} />
+                            <ShareLink tmcs={this.props.tmcs} />
+                        </Guide>
+                }
             </div>
         )
     }
@@ -252,5 +263,104 @@ class ShareLink extends GuidePage<GuidePageProps & { tmcs: TMCSAnonymous }, {qrc
                 </div>
             </div>
         )
+    }
+}
+
+class JoinPage extends GuidePage<GuidePageProps & { tmcs: TMCSAnonymous, pubkey:string }, { user: User }>
+{
+    constructor(props:any)
+    {
+        super(props);
+        this.state = {
+            user: null
+        };
+    }
+    async onPageActive()
+    {
+        const key = (await openpgp.key.readArmored(this.props.pubkey)).keys[0];
+        const user = new User(key);
+        this.setState({
+            user: user
+        });
+    }
+    render()
+    {
+        return (
+            <div className="wrapper join-page">
+                <header>Invitation</header>
+                <p className="about">You are invited to make contact with someone. </p>
+                {
+                    this.state.user
+                        ? <div className="user-info">
+                            <HeaderComponent className="name" header="Name">{this.state.user.name}</HeaderComponent>
+                            <HeaderComponent className="email" header="Email">{this.state.user.email}</HeaderComponent>
+                            <HeaderComponent className="key-id" header="KeyID">{this.state.user.fingerprint.substr(32).toUpperCase()}</HeaderComponent>
+                            <HeaderComponent className="fingerprint" header="Fingerprint">{formatFingerprint(this.state.user.fingerprint)}</HeaderComponent>
+                            <HeaderComponent className="pubkey" header="Public Key">
+                                <CopyToClipboard text={this.props.pubkey}>Copy to Clipboard</CopyToClipboard>
+                            </HeaderComponent>
+                            <p className="notice">Please comfirm the identifier of this key.</p>
+                        </div>
+                        : <div className="loading-wrapper">
+                            <IconLoading className="icon-loading"/>
+                        </div>
+                }
+            </div>
+        )
+    }
+}
+
+class WaitConfirm extends GuidePage<GuidePageProps & { tmcs: TMCSAnonymous, joinKey: string}, {state: "pending" | "ready" | "error", msg:string}>
+{
+    constructor(props: any)
+    {
+        super(props);
+        this.state = {
+            state: "pending",
+            msg: "Waiting for confirm..."
+        };
+    }
+    async onPageActive()
+    {
+        this.guide.setNext(false);
+        this.guide.setBack(false);
+        await sleep(3000);
+        const result = await this.props.tmcs.contactRequest(this.props.joinKey);
+        if (!result)
+            this.setState({
+                state: "error",
+                msg: "Invitation has been rejected."
+            });
+        else
+        {
+            this.guide.setNext(true, "DONE");
+            this.guide.next();
+        }
+    }
+    render()
+    {
+        if (this.state.state === "pending")
+            return (
+                <div className="wrapper request-page">
+                    <header>Waiting for Response</header>
+                    <p className="about">Almost done.</p>
+                    <div className="waiting">
+                        <div className="dot"></div>
+                        <div className="dot"></div>
+                        <div className="dot"></div>
+                    </div>
+                    <div className="msg">{this.state.msg}</div>
+                </div>
+            );
+        else if (this.state.state === "error")
+            return (
+                <div className="wrapper request-page">
+                    <header>Invitation Rejected</header>
+                    <div className="error">
+                        <IconCross className="icon-error" />
+                    </div>
+                    <div className="msg">{this.state.msg}</div>
+                </div>
+            );
     }
 }
