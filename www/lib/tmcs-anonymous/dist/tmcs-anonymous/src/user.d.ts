@@ -4,7 +4,8 @@ export declare class User {
     pubkey: openpgp.key.Key;
     prvkey: openpgp.key.Key;
     messages: Message[];
-    keyid: string;
+    userid: string;
+    readonly keyid: string;
     readonly fingerprint: string;
     readonly name: string;
     readonly email: string;

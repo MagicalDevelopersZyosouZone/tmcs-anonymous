@@ -3,7 +3,14 @@ import { User, Session, Message, MessageState } from "tmcs-anonymous";
 import TMCSAnonymous from "tmcs-anonymous";
 import { formatFingerprint } from "./util";
 import { Dialog, Button, IconText } from "./components";
-import { IconKey, IconVerify, IconWarn, IconSend, IconLoading, IconCheck, IconWarnNoBackground } from "./icons";
+import { IconKey, IconVerify, IconWarn, IconSend, IconLoading, IconCheck, IconWarnNoBackground, IconCross } from "./icons";
+
+
+interface PendingContactRequest
+{
+    user: User;
+    resolver: (result: boolean) => void;
+}
 
 interface TMCSAnonymousProps
 {
@@ -14,6 +21,7 @@ interface TMCSAnonymousState
 {
     contacts: User[];
     activeSession: Session;
+    contactRequests: PendingContactRequest[];
 }
 
 export class TMCSAnonymousUI extends React.Component<TMCSAnonymousProps, TMCSAnonymousState>
@@ -24,16 +32,27 @@ export class TMCSAnonymousUI extends React.Component<TMCSAnonymousProps, TMCSAno
         super(props);
         this.dialog = React.createRef();
         this.state = {
-            contacts: Array.from(this.props.tmcs.contacts.values()).filter(usr=>usr!=this.props.tmcs.user),
-            activeSession: props.tmcs.sessions[0]
+            contacts: Array.from(this.props.tmcs.contacts.values()).filter(usr => usr != this.props.tmcs.user),
+            activeSession: props.tmcs.sessions[0],
+            contactRequests: []
         };
     }
-    componentDidMount()
+    async componentDidMount()
     {
+        if (this.props.tmcs.state !== "ready")
+            await this.props.tmcs.connect();
         this.props.tmcs.onContactRequest.on(async (usr) =>
         {
             return new Promise<boolean>(async (resolve) =>
             {
+                this.setState({
+                    contactRequests: [{
+                        resolver: resolve,
+                        user: usr
+                    }, ...this.state.contactRequests]
+                });
+
+                /*
                 const accept = () =>
                 {
                     resolve(true);
@@ -60,12 +79,19 @@ export class TMCSAnonymousUI extends React.Component<TMCSAnonymousProps, TMCSAno
                             <Button className="button-deny" onClick={deny}>Deny</Button>
                         </div>
                     </div>
-                ));
+                ));*/
             });
         });
         this.props.tmcs.onNewSession.on((session) =>
         {
             this.setState({ activeSession: session });
+        });
+    }
+    resolveContactRequest(accept: boolean, idx: number)
+    {
+        this.state.contactRequests[idx].resolver(accept);
+        this.setState({
+            contactRequests: this.state.contactRequests.filter((_, i) => i != idx)
         });
     }
     render()
@@ -82,6 +108,13 @@ export class TMCSAnonymousUI extends React.Component<TMCSAnonymousProps, TMCSAno
                         </div>
                     </header>
                     <ul className="contacts">
+                        {
+                            this.state.contactRequests.map((request, idx) => (
+                                <li key={idx}>
+                                    <ContactRequest user={request.user} onResolved={(result)=>this.resolveContactRequest(result, idx)}></ContactRequest>
+                                </li>
+                            ))
+                        }
                         {
                             this.state.contacts.map((contact, idx) => (
                                 <li key={idx}>
@@ -126,6 +159,30 @@ class Contact extends React.Component<ContactProps>
             <div className={["contact", this.props.className].join(" ")} onClick={()=>this.onClick()}>
                 <div className="name">{this.props.user.name}</div>
                 <IconText className="fingerprint" icon={(<IconKey/>)}>{formatFingerprint(this.props.user.fingerprint)}</IconText>
+            </div>
+        )
+    }
+}
+
+interface ContactRequestProps
+{
+    user: User;
+    onResolved: (accept: boolean) => void;
+}
+class ContactRequest extends React.Component<ContactRequestProps>
+{
+    render()
+    {
+        return (
+            <div className="contact-request">
+                <div className="info">
+                    <div className="name">{this.props.user.name}</div>
+                    <IconText className="keyid" icon={(<IconKey />)}>{this.props.user.keyid}</IconText>
+                </div>
+                <div className="actions">
+                    <IconCheck className="accept icon-check" onClick={()=>this.props.onResolved(true)}/>
+                    <IconCross className="deny icon-cross" onClick={()=>this.props.onResolved(false)}/>
+                </div>
             </div>
         )
     }

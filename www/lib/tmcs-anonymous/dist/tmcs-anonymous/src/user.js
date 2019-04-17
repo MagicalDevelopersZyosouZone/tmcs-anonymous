@@ -11,13 +11,14 @@ const openpgp = __importStar(require("openpgp"));
 class User {
     constructor(pubkey, prvkey = null) {
         this.messages = [];
-        this.keyid = pubkey.getUserIds()[0];
+        this.userid = pubkey.getUserIds()[0];
         this.pubkey = pubkey;
         this.prvkey = prvkey;
     }
+    get keyid() { return this.fingerprint.substr(32).toUpperCase(); }
     get fingerprint() { return this.pubkey.getFingerprint(); }
-    get name() { return openpgp.util.parseUserId(this.keyid).name; }
-    get email() { return openpgp.util.parseUserId(this.keyid).email; }
+    get name() { return openpgp.util.parseUserId(this.userid).name; }
+    get email() { return openpgp.util.parseUserId(this.userid).email; }
 }
 exports.User = User;
 //# sourceMappingURL=user.js.map

@@ -6,14 +6,16 @@ export class User
     pubkey: openpgp.key.Key;
     prvkey: openpgp.key.Key;
     messages: Message[] = [];
-    keyid: string;
+    userid: string;
+
+    get keyid(): string { return this.fingerprint.substr(32).toUpperCase() }
     get fingerprint(): string { return this.pubkey.getFingerprint() }
-    get name(): string { return openpgp.util.parseUserId(this.keyid).name }
-    get email(): string { return openpgp.util.parseUserId(this.keyid).email }
+    get name(): string { return openpgp.util.parseUserId(this.userid).name }
+    get email(): string { return openpgp.util.parseUserId(this.userid).email }
 
     constructor(pubkey: openpgp.key.Key, prvkey: openpgp.key.Key = null)
     {
-        this.keyid = pubkey.getUserIds()[0];
+        this.userid = pubkey.getUserIds()[0];
         this.pubkey = pubkey;
         this.prvkey = prvkey;
     }

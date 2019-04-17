@@ -20,6 +20,12 @@ input,.input{
 .icon svg{
     height: 100%;
 }
+.icon-check{
+    fill: #52E952;
+}
+.icon-cross{
+    fill: #ff532d;
+}
 .button{
     cursor: pointer;
     user-select: none;
@@ -157,6 +163,45 @@ input,.input{
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+
+.contact-request{
+    padding: 1em 2em;
+    transition: all .1s;
+    cursor: pointer;
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+}
+.contact-request:hover{
+    background-color: #444;
+}
+.contact-request .info{
+    flex: 1 0;
+}
+.contact-request .name{
+    font-size: 1em;
+}
+.contact-request .keyid{
+    color: #CCC;
+    fill: #CCC;
+    font-size: .9em;
+}
+.contact-request .keyid .icon{
+    margin-right: .5em;
+}
+.contact-request .actions{
+    display: flex;
+}
+.contact-request .actions .icon{
+    height: 1.6em;
+    padding: .3em;
+    opacity: .8;
+    transition: all .1s;
+}
+.contact-request .actions .icon:hover{
+    opacity: 1;
+}
+
 .icon-text{
     margin: 0;
     display: flex;
