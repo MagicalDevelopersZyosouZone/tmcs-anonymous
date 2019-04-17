@@ -15,7 +15,7 @@ class User {
         this.pubkey = pubkey;
         this.prvkey = prvkey;
     }
-    get keyid() { return this.fingerprint.substr(32).toUpperCase(); }
+    get keyid() { return this.pubkey.getFingerprint().substr(32).toUpperCase(); }
     get fingerprint() { return this.pubkey.getFingerprint(); }
     get name() { return openpgp.util.parseUserId(this.userid).name; }
     get email() { return openpgp.util.parseUserId(this.userid).email; }

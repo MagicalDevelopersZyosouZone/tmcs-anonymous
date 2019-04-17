@@ -235,7 +235,7 @@ export default class TMCSAnonymous
                 this.contacts.set(usr.fingerprint, usr);
                 this.sendPack(this.genReceipt(messages), sender);
 
-                let session = new Session(this);
+                let session = new Session(this, usr.name);
                 session.users = [this.user, usr];
                 this.sessions.push(session);
                 if (this.onNewSession)
@@ -259,7 +259,7 @@ export default class TMCSAnonymous
             let session = this.sessions.filter(session => session.users.some(usr => usr.fingerprint === msg.sender))[0];
             if (!session)
             {
-                session = new Session(this);
+                session = new Session(this, usr.name);
                 session.users = [this.user, usr];
                 this.sessions.push(session);
                 this.onNewSession.trigger(session);
@@ -295,7 +295,7 @@ export default class TMCSAnonymous
                 {
                     resolve(true);
                     
-                    const session = new Session(this);
+                    const session = new Session(this, user.name);
                     session.users = [this.user, user];
                     this.sessions.push(session);
                     this.onNewSession.trigger(session);

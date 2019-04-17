@@ -8,7 +8,7 @@ export class User
     messages: Message[] = [];
     userid: string;
 
-    get keyid(): string { return this.fingerprint.substr(32).toUpperCase() }
+    get keyid(): string { return this.pubkey.getFingerprint().substr(32).toUpperCase() }
     get fingerprint(): string { return this.pubkey.getFingerprint() }
     get name(): string { return openpgp.util.parseUserId(this.userid).name }
     get email(): string { return openpgp.util.parseUserId(this.userid).email }

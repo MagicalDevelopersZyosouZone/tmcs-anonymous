@@ -142,23 +142,35 @@ input,.input{
 }
 .contact .name{
     font-size: 1em;
-    margin-bottom: .5em;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
-.contact .fingerprint{
-    font-size: .8em;
+.contact .email{
+    font-size: .9em;
+    color: #CCC;
+}
+.contact .email::before{
+    content: "<";
+}
+.contact .email::after{
+    content: ">"
+}
+.contact .keyid{
+    font-size: .9em;
     color: #BBB;
     cursor: pointer;
 }
-.contact .fingerprint:hover{
+.contact .keyid:hover{
     color: #EEE;
     text-decoration: underline;
 }
-.contact .fingerprint .icon{
+.contact .keyid .icon{
     fill: #BBB;
     height: 1.4em;
     margin-right: .5em;
 }
-.contact .fingerprint .text{
+.contact .keyid .text{
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -166,11 +178,14 @@ input,.input{
 
 .contact-request{
     padding: 1em 2em;
+    padding-left: 1.5em;
     transition: all .1s;
     cursor: pointer;
     display: flex;
     flex-flow: row nowrap;
     align-items: center;
+    border-left: solid .5em #6fa6a9;
+    background-color: #5A5A5A;
 }
 .contact-request:hover{
     background-color: #444;
@@ -180,6 +195,19 @@ input,.input{
 }
 .contact-request .name{
     font-size: 1em;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+.contact-request .email{
+    font-size: .9em;
+    color: #CCC;
+}
+.contact-request .email::before{
+    content: "<";
+}
+.contact-request .email::after{
+    content: ">"
 }
 .contact-request .keyid{
     color: #CCC;

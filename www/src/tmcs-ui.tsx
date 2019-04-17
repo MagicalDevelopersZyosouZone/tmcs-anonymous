@@ -3,13 +3,21 @@ import { User, Session, Message, MessageState } from "tmcs-anonymous";
 import TMCSAnonymous from "tmcs-anonymous";
 import { formatFingerprint } from "./util";
 import { Dialog, Button, IconText } from "./components";
-import { IconKey, IconVerify, IconWarn, IconSend, IconLoading, IconCheck, IconWarnNoBackground, IconCross } from "./icons";
+import { IconKey, IconVerify, IconWarn, IconSend, IconLoading, IconCheck, IconWarnNoBackground, IconCross, IconEdit } from "./icons";
 
 
 interface PendingContactRequest
 {
     user: User;
     resolver: (result: boolean) => void;
+}
+
+interface SessionInfo
+{
+    name: string;
+    session: Session;
+    unread: number;
+    keyid: string;
 }
 
 interface TMCSAnonymousProps
@@ -19,7 +27,7 @@ interface TMCSAnonymousProps
 
 interface TMCSAnonymousState
 {
-    contacts: User[];
+    sessions: SessionInfo[];
     activeSession: Session;
     contactRequests: PendingContactRequest[];
 }
@@ -32,7 +40,15 @@ export class TMCSAnonymousUI extends React.Component<TMCSAnonymousProps, TMCSAno
         super(props);
         this.dialog = React.createRef();
         this.state = {
-            contacts: Array.from(this.props.tmcs.contacts.values()).filter(usr => usr != this.props.tmcs.user),
+            sessions: this.props.tmcs.sessions.map(session =>
+            {
+                return {
+                    name: session.users[1].name,
+                    session: session,
+                    keyid: session.users[1].keyid,
+                    unread: 0
+                };
+            }),
             activeSession: props.tmcs.sessions[0],
             contactRequests: []
         };
@@ -52,39 +68,21 @@ export class TMCSAnonymousUI extends React.Component<TMCSAnonymousProps, TMCSAno
                     }, ...this.state.contactRequests]
                 });
 
-                /*
-                const accept = () =>
-                {
-                    resolve(true);
-                    this.state.contacts.push(usr);
-                    this.setState({ contacts: this.state.contacts });
-                    this.dialog.current.hide();
-                };
-                const deny = () =>
-                {
-                    resolve(false);
-                    this.dialog.current.hide();
-                };
-                this.dialog.current.show((
-                    <div className="dialog-box contact-request">
-                        <header>Contact Request</header>
-                        <p className="text">A user requested to contact with you.</p>
-                        <p className="key">
-                            <span>PGP FingerPrint: </span>
-                            <span>{formatFingerprint(usr.fingerprint)}</span>
-                        </p>
-                        <div className="pubkey">{await usr.pubkey.armor()}</div>
-                        <div className="actions">
-                            <Button className="button-accept" onClick={accept}>Accept</Button>
-                            <Button className="button-deny" onClick={deny}>Deny</Button>
-                        </div>
-                    </div>
-                ));*/
             });
         });
         this.props.tmcs.onNewSession.on((session) =>
         {
-            this.setState({ activeSession: session });
+            this.setState({
+                sessions: this.props.tmcs.sessions.map(session =>
+                {
+                    return {
+                        name: session.name,
+                        keyid: session.users[1].keyid,
+                        session: session,
+                        unread: 0
+                    };
+                })
+            });
         });
     }
     resolveContactRequest(accept: boolean, idx: number)
@@ -116,9 +114,9 @@ export class TMCSAnonymousUI extends React.Component<TMCSAnonymousProps, TMCSAno
                             ))
                         }
                         {
-                            this.state.contacts.map((contact, idx) => (
+                            this.state.sessions.map((session, idx) => (
                                 <li key={idx}>
-                                    <Contact user={contact}></Contact>
+                                    <SessionTag session={session}></SessionTag>
                                 </li>
                             ))
                         }
@@ -139,26 +137,26 @@ export class TMCSAnonymousUI extends React.Component<TMCSAnonymousProps, TMCSAno
     }
 }
 
-interface ContactProps
+interface SessionTagProps
 {
-    user: User;
+    session: SessionInfo;
     className?: string;
-    onClick?: (usr: User) => void;
+    onClick?: (session: SessionInfo) => void;
 }
 
-class Contact extends React.Component<ContactProps>
+class SessionTag extends React.Component<SessionTagProps>
 {
     onClick()
     {
         if (this.props.onClick)
-            this.props.onClick(this.props.user);
+            this.props.onClick(this.props.session);
     }
     render()
     {
         return (
             <div className={["contact", this.props.className].join(" ")} onClick={()=>this.onClick()}>
-                <div className="name">{this.props.user.name}</div>
-                <IconText className="fingerprint" icon={(<IconKey/>)}>{formatFingerprint(this.props.user.fingerprint)}</IconText>
+                <div className="name">{this.props.session.name} <span className="email">{this.props.session.session.users[1].email}</span></div>
+                <IconText className="keyid" icon={(<IconKey/>)}>{this.props.session.keyid}</IconText>
             </div>
         )
     }
@@ -176,7 +174,7 @@ class ContactRequest extends React.Component<ContactRequestProps>
         return (
             <div className="contact-request">
                 <div className="info">
-                    <div className="name">{this.props.user.name}</div>
+                    <div className="name">{this.props.user.name} <span className="email">{this.props.user.email}</span></div>
                     <IconText className="keyid" icon={(<IconKey />)}>{this.props.user.keyid}</IconText>
                 </div>
                 <div className="actions">
@@ -226,6 +224,10 @@ class ChatSession extends React.Component<ChatScreenProps, ChatScreenState>
             });
         });
     }
+    async send(text: string)
+    {
+        await this.props.session.send(text);
+    }
     render()
     {
         return (
@@ -238,15 +240,7 @@ class ChatSession extends React.Component<ChatScreenProps, ChatScreenState>
                             ))
                         }
                         {
-                            <div className="input-card">
-                                <div className="wrapper">
-                                    <div className="card">
-                                        <div className="input textbox" contentEditable={true} data-placeholder="Input Text here">
-                                        </div>
-                                    </div>
-                                    <IconSend className="icon-button button-send"/>
-                                </div>
-                            </div>
+                            <InputCard onSend={(text)=>this.send(text)}></InputCard>
                         }
                     </div>
                 </div>
@@ -317,6 +311,34 @@ class MessageCard extends React.Component<MessageCardProps, MessageCardState>
                                 : <IconWarn className="warn" />
                     }
                 </p>
+            </div>
+        );
+    }
+}
+
+class InputCard extends React.Component<{ onSend: (msg: string) => void }>
+{
+    send()
+    {
+        const input = this.refs["input-text"] as HTMLDivElement;
+        const text = input.innerText;
+        input.innerHTML = "";
+        this.props.onSend(text);
+    }
+    render()
+    {
+        return (
+            <div className="input-card">
+                <div className="header">
+                    <IconEdit/>
+                </div>
+                <div className="wrapper">
+                    <div className="card">
+                        <div className="input textbox" ref="input-text" contentEditable={true} data-placeholder="Input Text here">
+                        </div>
+                    </div>
+                    <IconSend className="icon-button button-send" onClick={() => this.send()} />
+                </div>
             </div>
         );
     }
