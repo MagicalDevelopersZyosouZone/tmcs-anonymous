@@ -99,10 +99,10 @@ class App extends React.Component<{}, {state:"loading"|"startup"|"ready"}>
     }
 }
 
-TMCSConsole();
 async function main()
 {
-
+    openpgp.initWorker({ path: "./script/openpgp.worker.min.js" });
+    TMCSConsole();
     const tmcs = new TMCSAnonymous(window.location.toString());
     const joinKey = await tmcs.getSessionKey();
 

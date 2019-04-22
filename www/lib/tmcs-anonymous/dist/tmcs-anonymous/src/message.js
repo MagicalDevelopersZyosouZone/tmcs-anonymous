@@ -62,7 +62,7 @@ class Message {
     decrypt(prvkey, pubkey) {
         return __awaiter(this, void 0, void 0, function* () {
             const dec = yield openpgp.decrypt({
-                message: yield openpgp.message.read(this.rawBody),
+                message: yield openpgp.message.read(Uint8Array.from(this.rawBody)),
                 privateKeys: [prvkey],
                 publicKeys: pubkey ? [pubkey] : undefined,
             });

@@ -137,6 +137,9 @@ input,.input{
     transition: all .1s;
     cursor: pointer;
 }
+.contact.active{
+    background-color: #4A4A4A;
+}
 .contact:hover{
     background-color: #444;
 }
@@ -400,6 +403,8 @@ input,.input{
 }
 
 .msg-card .card{
+    max-width: 50%;
+    max-height: 15em;
     background-color: #999;
     padding: .5em 1em;
     border-radius: 1.2em;
@@ -410,6 +415,11 @@ input,.input{
     background-color: #5F9B9D;
     border-radius: 1.2em;
     border-bottom-left-radius: 0;
+    position: relative;
+}
+.msg-card .text{
+    overflow: hidden;
+    height: 100%;
 }
 
 .msg-card .icon{
@@ -833,12 +843,23 @@ input,.input{
     .input-card .input{
         min-width: 15em;
         word-break: normal;
+        font-size: inherit;
+        padding: 0;
+        margin: 0;
+        resize: none;
+        overflow: hidden;
+        border: none 0px transparent;
+        background-color: transparent;
+        min-height: fit-content;
+        max-height: max-content;
+        color: inherit
     }
     .input-card .icon{
         height: 1.6em;
         padding: .4em;
         fill: rgba(255,255,255,0.5);
     }
+    
     .chat-session .input-area{
         display: none;
     }   

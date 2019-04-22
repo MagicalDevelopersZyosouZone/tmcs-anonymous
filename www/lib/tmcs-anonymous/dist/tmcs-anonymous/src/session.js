@@ -27,30 +27,35 @@ class Session {
                 msg.time = new Date();
                 return msg;
             });
-            const stateChange = () => __awaiter(this, void 0, void 0, function* () {
-                try {
-                    yield Promise.all(msgs.map((msg) => {
-                        return new Promise((resolve, reject) => {
-                            msg.onStateChange.on(state => {
-                                if (state & message_1.MessageState.Received)
-                                    resolve();
-                                else if (!(state & message_1.MessageState.Pending))
-                                    reject();
+            // Handle State
+            setTimeout(() => {
+                (() => __awaiter(this, void 0, void 0, function* () {
+                    try {
+                        yield Promise.all(msgs.map((msg) => {
+                            return new Promise((resolve, reject) => {
+                                msg.onStateChange.on(state => {
+                                    if (state & message_1.MessageState.Received)
+                                        resolve();
+                                    else if (!(state & message_1.MessageState.Pending))
+                                        reject();
+                                });
                             });
-                        });
-                    }));
-                    message.state = message_1.MessageState.Received;
-                    message.onStateChange.trigger(message_1.MessageState.Received);
-                }
-                catch (_a) {
-                    message.state = message_1.MessageState.Failed;
-                    message.onStateChange.trigger(message.state);
-                }
-            });
-            stateChange();
-            yield Promise.all(msgs.map((msg) => __awaiter(this, void 0, void 0, function* () {
-                yield this.tmcs.send(msg);
-            })));
+                        }));
+                        message.state = message_1.MessageState.Received;
+                        message.onStateChange.trigger(message_1.MessageState.Received);
+                    }
+                    catch (_a) {
+                        message.state = message_1.MessageState.Failed;
+                        message.onStateChange.trigger(message.state);
+                    }
+                }))();
+                // Send
+                (() => __awaiter(this, void 0, void 0, function* () {
+                    yield Promise.all(msgs.map((msg) => __awaiter(this, void 0, void 0, function* () {
+                        yield this.tmcs.send(msg);
+                    })));
+                }))();
+            }, 10);
             this.messages.push(message);
             this.onMessage.trigger(message);
             return message;

@@ -60,7 +60,7 @@ export class Message
     async decrypt(prvkey: openpgp.key.Key, pubkey?: openpgp.key.Key)
     {
         const dec = await openpgp.decrypt({
-            message: await openpgp.message.read(this.rawBody),
+            message: await openpgp.message.read(Uint8Array.from(this.rawBody)),
             privateKeys: [prvkey],
             publicKeys: pubkey ? [pubkey] : undefined,
         });

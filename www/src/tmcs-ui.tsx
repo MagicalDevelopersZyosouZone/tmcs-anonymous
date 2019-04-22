@@ -81,7 +81,8 @@ export class TMCSAnonymousUI extends React.Component<TMCSAnonymousProps, TMCSAno
                         session: session,
                         unread: 0
                     };
-                })
+                }),
+                activeSession: this.state.activeSession || session
             });
         });
     }
@@ -91,6 +92,10 @@ export class TMCSAnonymousUI extends React.Component<TMCSAnonymousProps, TMCSAno
         this.setState({
             contactRequests: this.state.contactRequests.filter((_, i) => i != idx)
         });
+    }
+    sessionTagClick(session: Session)
+    {
+        this.setState({ activeSession: session });
     }
     render()
     {
@@ -116,7 +121,7 @@ export class TMCSAnonymousUI extends React.Component<TMCSAnonymousProps, TMCSAno
                         {
                             this.state.sessions.map((session, idx) => (
                                 <li key={idx}>
-                                    <SessionTag session={session}></SessionTag>
+                                    <SessionTag session={session} active={session.session === this.state.activeSession} onClick={()=>this.sessionTagClick(session.session)}></SessionTag>
                                 </li>
                             ))
                         }
@@ -139,6 +144,7 @@ export class TMCSAnonymousUI extends React.Component<TMCSAnonymousProps, TMCSAno
 
 interface SessionTagProps
 {
+    active: boolean;
     session: SessionInfo;
     className?: string;
     onClick?: (session: SessionInfo) => void;
@@ -154,7 +160,7 @@ class SessionTag extends React.Component<SessionTagProps>
     render()
     {
         return (
-            <div className={["contact", this.props.className].join(" ")} onClick={()=>this.onClick()}>
+            <div className={["contact", this.props.active?"active": "inactive", this.props.className].join(" ")} onClick={()=>this.onClick()}>
                 <div className="name">{this.props.session.name} <span className="email">{this.props.session.session.users[1].email}</span></div>
                 <IconText className="keyid" icon={(<IconKey/>)}>{this.props.session.keyid}</IconText>
             </div>
@@ -222,6 +228,30 @@ class ChatSession extends React.Component<ChatScreenProps, ChatScreenState>
             this.setState({
                 messages: this.props.session.messages,
             });
+        });
+    }
+    componentDidUpdate()
+    {
+        this.props.session.onMessage.on(async (msg) =>
+        {
+            if (msg.sender !== this.props.tmcs.user.fingerprint)
+                await msg.decrypt(this.props.tmcs.user.prvkey, this.props.tmcs.contacts.get(msg.sender).pubkey);
+            this.setState({
+                messages: this.props.session.messages,
+            });
+        });
+    }
+    componentWillReceiveProps(nextProps: ChatScreenProps)
+    {
+        const users = new Map<string, User & { colorId: number, self: boolean }>();
+        nextProps.session.users.forEach(usr => users.set(usr.fingerprint, {
+            self: usr === nextProps.tmcs.user,
+            colorId: nextProps.session.users.indexOf(usr),
+            ...usr
+        }));
+        this.setState({
+            messages: nextProps.session.messages,
+            users: users
         });
     }
     async send(text: string)
@@ -295,7 +325,7 @@ class MessageCard extends React.Component<MessageCardProps, MessageCardState>
     {
         return (
             <div className={["msg-card", this.props.self ? "self" : ""].join(' ')}>
-                <p className="wrapper">
+                <div className="wrapper">
                     <div className="card">
                         <span className="text">{this.props.message.body}</span>
                     </div>
@@ -310,7 +340,7 @@ class MessageCard extends React.Component<MessageCardProps, MessageCardState>
                                 ? <IconVerify className="verified" />
                                 : <IconWarn className="warn" />
                     }
-                </p>
+                </div>
             </div>
         );
     }

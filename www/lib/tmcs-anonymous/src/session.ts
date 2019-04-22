@@ -28,37 +28,46 @@ export class Session
             msg.time = new Date();
             return msg;
         });
-        const stateChange = async () =>
+
+        // Handle State
+        setTimeout(() =>
         {
-            try
+            (async () =>
             {
-                await Promise.all(msgs.map((msg) =>
+                try
                 {
-                    return new Promise((resolve, reject) =>
+                    await Promise.all(msgs.map((msg) =>
                     {
-                        msg.onStateChange.on(state =>
+                        return new Promise((resolve, reject) =>
                         {
-                            if (state & MessageState.Received)
-                                resolve();
-                            else if (!(state & MessageState.Pending))
-                                reject();
+                            msg.onStateChange.on(state =>
+                            {
+                                if (state & MessageState.Received)
+                                    resolve();
+                                else if (!(state & MessageState.Pending))
+                                    reject();
+                            });
                         });
-                    });
-                }));
-                message.state = MessageState.Received;
-                message.onStateChange.trigger(MessageState.Received);
-            }
-            catch 
+                    }));
+                    message.state = MessageState.Received;
+                    message.onStateChange.trigger(MessageState.Received);
+                }
+                catch
+                {
+                    message.state = MessageState.Failed;
+                    message.onStateChange.trigger(message.state);
+                }
+            })();
+
+            // Send
+            (async () =>
             {
-                message.state = MessageState.Failed;
-                message.onStateChange.trigger(message.state);
-            }
-        }
-        stateChange();
-        await Promise.all(msgs.map(async (msg) =>
-        {
-            await this.tmcs.send(msg);
-        }));
+                await Promise.all(msgs.map(async (msg) =>
+                {
+                    await this.tmcs.send(msg);
+                }));
+            })();
+        }, 10);
         this.messages.push(message);
         this.onMessage.trigger(message);
         return message;
