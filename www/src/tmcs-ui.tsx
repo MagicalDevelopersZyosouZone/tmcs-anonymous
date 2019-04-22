@@ -202,6 +202,7 @@ interface ChatScreenState
 {
     messages: Message[];
     users: Map<string, User & { colorId: number, self: boolean }>;
+    loadMsg: boolean;
 }
 
 class ChatSession extends React.Component<ChatScreenProps, ChatScreenState>
@@ -211,7 +212,8 @@ class ChatSession extends React.Component<ChatScreenProps, ChatScreenState>
         super(props);
         this.state = {
             messages: props.session.messages,
-            users: new Map()
+            users: new Map(),
+            loadMsg: true,
         };
         props.session.users.forEach(usr => this.state.users.set(usr.fingerprint, {
             self: usr === this.props.tmcs.user,
@@ -240,6 +242,8 @@ class ChatSession extends React.Component<ChatScreenProps, ChatScreenState>
                 messages: this.props.session.messages,
             });
         });
+        if (this.state.loadMsg)
+            this.setState({ loadMsg: false });
     }
     componentWillReceiveProps(nextProps: ChatScreenProps)
     {
@@ -251,7 +255,8 @@ class ChatSession extends React.Component<ChatScreenProps, ChatScreenState>
         }));
         this.setState({
             messages: nextProps.session.messages,
-            users: users
+            users: users,
+            loadMsg: true,
         });
     }
     async send(text: string)
@@ -266,7 +271,7 @@ class ChatSession extends React.Component<ChatScreenProps, ChatScreenState>
                     <div className="msg-screen">
                         {
                             this.state.messages.map((msg, idx) => (
-                                <MessageCard self={this.state.users.get(msg.sender).self} colorId={this.state.users.get(msg.sender).colorId} message={msg} key={idx}></MessageCard>
+                                <MessageCard self={this.state.users.get(msg.sender).self} colorId={this.state.users.get(msg.sender).colorId} message={msg} key={idx} insert={!this.state.loadMsg}></MessageCard>
                             ))
                         }
                         {
@@ -375,9 +380,11 @@ class InputCard extends React.Component<{ onSend: (msg: string) => void }>
 {
     send()
     {
-        const input = this.refs["input-text"] as HTMLDivElement;
-        const text = input.innerText;
-        input.innerHTML = "";
+        const input = this.refs["input-text"] as TMCSInput;
+        const text = input.getText();
+        if (text === "")
+            return;
+        input.clear();
         this.props.onSend(text);
     }
     render()
@@ -389,12 +396,65 @@ class InputCard extends React.Component<{ onSend: (msg: string) => void }>
                 </div>
                 <div className="wrapper">
                     <div className="card">
-                        <div className="input textbox" ref="input-text" contentEditable={true} data-placeholder="Input Text here">
-                        </div>
+                        <TMCSInput ref="input-text" onSend={()=>this.send()}/>
                     </div>
                     <IconSend className="icon-button button-send" onClick={() => this.send()} />
                 </div>
             </div>
         );
+    }
+}
+
+interface TMCSInputProps extends React.HTMLAttributes<HTMLDivElement>
+{
+    placeHolder?: string;
+    onSend?: () => void;
+}
+class TMCSInput extends React.Component<TMCSInputProps>
+{
+    getText(): string
+    {
+        const input = this.refs["input-text"] as HTMLDivElement;
+        return input.innerText;
+    }
+    clear()
+    {
+        const input = this.refs["input-text"] as HTMLDivElement;
+        input.innerHTML = "";
+    }
+    private onKeyPress(e: React.KeyboardEvent<HTMLDivElement>)
+    {
+        if (e.keyCode === 13)
+        {
+            this.props.onSend && this.props.onSend();
+            e.preventDefault();
+            return;
+        }
+        this.props.onKeyPress && this.props.onKeyPress(e);
+    }
+    private onPaste(e: React.ClipboardEvent<HTMLDivElement>)
+    {
+        e.preventDefault();
+        const input = this.refs["input-text"] as HTMLDivElement;
+        const text = e.clipboardData.getData('text/plain');
+        document.execCommand("insertHTML", false, text);
+        this.props.onPaste && this.props.onPaste(e);
+    }
+    render()
+    {
+        let { className, placeHolder, contentEditable, onSend, ...others } = this.props;
+        placeHolder = placeHolder || "Input Text Here";
+        return (
+            <div
+                className={buildClassName("input textbox", this.props.className)}
+                ref="input-text"
+                contentEditable={true}
+                data-placeholder={true}
+                onKeyDown={e => this.onKeyPress(e)}
+                onPaste={e => this.onPaste(e)}
+                {...others}
+            >
+            </div>
+        )
     }
 }

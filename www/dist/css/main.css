@@ -13,6 +13,24 @@ input,.input{
     color: rgba(255,255,255,0.5);
     cursor: text;
 }
+*::-webkit-scrollbar {
+  width: 10px;
+}
+
+/* Track */
+*::-webkit-scrollbar-track {
+  background: #555; 
+}
+
+/* Handle */
+*::-webkit-scrollbar-thumb {
+  background: #888; 
+}
+
+/* Handle on hover */
+*::-webkit-scrollbar-thumb:hover {
+  background: #AAA; 
+}
 .icon {
     display: block;
     height: 1em;
@@ -87,6 +105,8 @@ input,.input{
     align-items: stretch;
 }
 .side-menu{
+    display: flex;
+    flex-flow: column nowrap;
     width: 400px;
     background-color: #555;
     overflow: hidden;
@@ -128,6 +148,7 @@ input,.input{
 }
 
 .contacts{
+    overflow-y: auto;
     list-style: none;
     padding: 0;
     margin: 0;
@@ -358,9 +379,9 @@ input,.input{
     position: relative;
     box-sizing: content-box;
     
-    max-height: 0;
 }
 .msg-card.insert{
+    max-height: 0;
     animation-name: msg-stretch;
     animation-duration: 1s;
     animation-play-state: running;
@@ -427,6 +448,7 @@ input,.input{
     border-bottom-left-radius: 0;
 }
 .msg-card .text{
+    min-height: 1em;
     overflow: hidden;
     width: 100%;
     max-height: 15em;
