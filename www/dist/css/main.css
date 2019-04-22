@@ -359,11 +359,17 @@ input,.input{
     box-sizing: content-box;
     
     max-height: 0;
+}
+.msg-card.insert{
     animation-name: msg-stretch;
     animation-duration: 1s;
     animation-play-state: running;
     animation-fill-mode: forwards;
     animation-timing-function: cubic-bezier(0.47, 0, 0.75, 0.72);
+}
+.msg-card.extend{
+    max-height: fit-content;
+    animation-name: none;
 }
 
 @keyframes msg-stretch{
@@ -392,8 +398,11 @@ input,.input{
     flex-flow: row nowrap;
     justify-content: flex-start;
     align-items: flex-end;
-    opacity: 0;
+    max-width: 60%;
     
+}
+.msg-card.insert .wrapper{
+    opacity: 0;
     animation-name: msg-show-up;
     animation-delay: .5s;
     animation-duration: .2s;
@@ -403,23 +412,37 @@ input,.input{
 }
 
 .msg-card .card{
-    max-width: 50%;
-    max-height: 15em;
     background-color: #999;
+    max-width: 100%;
+    box-sizing: border-box;
     padding: .5em 1em;
     border-radius: 1.2em;
     border-top-left-radius: 0;
+    max-height: 100%;
 }
 
 .msg-card.self .card{
     background-color: #5F9B9D;
     border-radius: 1.2em;
     border-bottom-left-radius: 0;
-    position: relative;
 }
 .msg-card .text{
     overflow: hidden;
-    height: 100%;
+    width: 100%;
+    max-height: 15em;
+    display: block;
+    text-overflow: ellipsis;
+    word-wrap: break-word;
+    word-break: normal;
+    white-space: pre-wrap;
+}
+.msg-card.extend .text{
+    max-height: fit-content;
+}
+.msg-card .icon.icon-more{
+    fill: #EEE;
+    margin: 0;
+    text-align: center;
 }
 
 .msg-card .icon{

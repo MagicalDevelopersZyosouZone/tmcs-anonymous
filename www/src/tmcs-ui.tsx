@@ -1,9 +1,9 @@
 import React from "react";
 import { User, Session, Message, MessageState } from "tmcs-anonymous";
 import TMCSAnonymous from "tmcs-anonymous";
-import { formatFingerprint } from "./util";
+import { formatFingerprint, buildClassName } from "./util";
 import { Dialog, Button, IconText } from "./components";
-import { IconKey, IconVerify, IconWarn, IconSend, IconLoading, IconCheck, IconWarnNoBackground, IconCross, IconEdit } from "./icons";
+import { IconKey, IconVerify, IconWarn, IconSend, IconLoading, IconCheck, IconWarnNoBackground, IconCross, IconEdit, IconMore } from "./icons";
 
 
 interface PendingContactRequest
@@ -291,12 +291,16 @@ interface MessageCardProps
     self: boolean;
     colorId: number;
     message: Message;
+    insert?: boolean;
 }
 
 interface MessageCardState
 {
     verified: boolean | "waiting";
-    state: MessageState
+    state: MessageState,
+    overflow: boolean;
+    extend: boolean;
+    insert: boolean;
 }
 
 class MessageCard extends React.Component<MessageCardProps, MessageCardState>
@@ -306,7 +310,10 @@ class MessageCard extends React.Component<MessageCardProps, MessageCardState>
         super(props);
         this.state = {
             state: props.message.state,
-            verified: "waiting"
+            verified: "waiting",
+            overflow: false,
+            extend: false,
+            insert: props.insert === false ? false : true,
         };
     }
     async componentDidMount()
@@ -320,14 +327,32 @@ class MessageCard extends React.Component<MessageCardProps, MessageCardState>
                 });
             });
         }
+        var textElement = this.refs["text"] as HTMLDivElement;
+        if(textElement.scrollHeight > textElement.clientHeight)
+        {
+            this.setState({ overflow: true });
+        }
+    }
+    extend()
+    {
+        this.setState({
+            extend: true,
+            overflow: false,
+            insert: false
+        });
     }
     render()
     {
         return (
-            <div className={["msg-card", this.props.self ? "self" : ""].join(' ')}>
+            <div className={buildClassName("msg-card", this.props.self && "self", this.state.extend && "extend", this.state.insert && "insert")}>
                 <div className="wrapper">
                     <div className="card">
-                        <span className="text">{this.props.message.body}</span>
+                        <div className="text" ref="text">{this.props.message.body}</div>
+                        {
+                            this.state.overflow
+                                ? <IconMore onClick={() => this.extend()} />
+                                : null
+                        }
                     </div>
                     {
                         this.props.self

@@ -47,3 +47,15 @@ export function sleep(time:number)
 {
     return new Promise(resolve => setTimeout(resolve, time));
 }
+
+export function buildClassName(...names: any[]): string
+{
+    return [].concat(...names.filter(name => name).map(name =>
+    {
+        if (typeof (name) === "string")
+            return name.split(" ");
+        else if (name instanceof Array)
+            return name as string[];
+        return [name.toString()];
+    })).join(" ");
+}
