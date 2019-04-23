@@ -8,7 +8,7 @@
     "build:go": "export GOPATH=$PWD && cd src/tmcs-anonymous && go build",
     "build:www": "npx webpack",
     "build:watch": "npx webpack -w --mode development",
-    "build:tmcs": "npm run build:proto && cd ./www/lib/tmcs-anonymous && npm run build",
+    "build:tmcs": "cd ./www/lib/tmcs-anonymous && npm run build",
     "build:proto": "cd ./www/lib/tmcs-proto && npm run build:js",
     "copy-openpgp": "cp ./node_modules/openpgp/dist/openpgp.min.js ./www/dist/script/openpgp.min.js && cp ./node_modules/openpgp/dist/openpgp.worker.min.js ./www/dist/script/openpgp.worker.min.js",
     "test": "npx mocha ./www/test/test.js",
