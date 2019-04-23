@@ -1,0 +1,14 @@
+- BackEnd
+  - [ ] Invite link API
+  - [ ] Session static assets redirect
+  - [ ] User lifecycle management
+  - [ ] Fix bugs of receiving error loop
+  - [ ] Support image message
+
+- FrontEnd
+  - [ ] Auto link convertion
+  - [ ] Show invite link in TMCS UI
+  - [ ] Loading UI
+  - [ ] Add message time stamp
+  - [ ] Responsive UI
+  - [ ] New message notification
