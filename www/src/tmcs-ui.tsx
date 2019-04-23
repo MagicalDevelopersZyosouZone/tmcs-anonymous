@@ -449,7 +449,7 @@ class TMCSInput extends React.Component<TMCSInputProps>
                 className={buildClassName("input textbox", this.props.className)}
                 ref="input-text"
                 contentEditable={true}
-                data-placeholder={true}
+                data-placeholder={placeHolder}
                 onKeyDown={e => this.onKeyPress(e)}
                 onPaste={e => this.onPaste(e)}
                 {...others}

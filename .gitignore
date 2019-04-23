@@ -100,3 +100,4 @@ typings/
 .dynamodb/
 
 cert/
+debug
