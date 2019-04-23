@@ -166,7 +166,7 @@ func (server *TMCSAnonymousServer) handleJoin() func(http.ResponseWriter, *http.
 			return
 		}
 		key := obj.(*user.Key)
-		server.tmcs.RegistedKeys.Delete(session)
+		// server.tmcs.RegistedKeys.Delete(session)
 		http.Redirect(w, r, "/session/"+key.FingerPrint+"/", http.StatusSeeOther)
 	}
 }

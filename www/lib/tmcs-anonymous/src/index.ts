@@ -172,7 +172,16 @@ export default class TMCSAnonymous
         const confirm = tmcs_msg.TMCSMsg.ServerHandShake.deserializeBinary(buffer);
         this.state = "ready";
 
+        this.websocket.onclose = () => this.onDisconnect();
+
         this.msgLoop();
+    }
+
+    private async onDisconnect()
+    {
+        console.log("Disconnected.");
+        console.log("Reconnecting...");
+        await this.connect();
     }
 
     private async msgLoop()

@@ -1,6 +1,6 @@
 {
   "name": "tmcs-anonymous",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "A PGP based anonymous IM platform.",
   "main": "index.js",
   "scripts": {
