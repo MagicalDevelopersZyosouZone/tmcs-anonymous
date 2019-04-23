@@ -95,7 +95,8 @@ class TMCSAnonymous {
                 body: JSON.stringify(registerParam)
             }).then(response => response.json());
             if (result.error != tmcs_proto_1.default.TMCSError.ErrorCode.NONE) {
-                throw new Error(result.msg);
+                http: //localhost:3000/chat/qdsacNqo
+                 throw new Error(result.msg);
             }
             this.state = "registed";
             if (result.data.pubkey !== "") {
@@ -128,13 +129,17 @@ class TMCSAnonymous {
                 this.websocket.close();
             this.state = "connecting";
             this.websocket = new WebSocket(`${this.wsProtocol}${this.remoteAddress}/ws`);
+            if (!this.msgQueue)
+                this.msgQueue = new util_1.WebSocketMessageQueue(this.websocket);
+            else
+                this.msgQueue.update(this.websocket, true);
             yield util_1.waitWebsocketOpen(this.websocket);
             // Handshake ->
             const handshake = new tmcs_proto_1.default.TMCSMsg.ClientHandShake();
             handshake.setClientversion(1);
             this.websocket.send(handshake.serializeBinary());
             // <- Handshake
-            let buffer = yield util_1.waitWebSocketBinary(this.websocket, this.timeout);
+            let buffer = yield this.msgQueue.receive(this.timeout); // await waitWebSocketBinary(this.websocket, this.timeout);
             const serverHandshake = tmcs_proto_1.default.TMCSMsg.ServerHandShake.deserializeBinary(buffer);
             const token = openpgp.util.hex_to_Uint8Array(serverHandshake.getToken());
             // Sigin ->
@@ -150,16 +155,24 @@ class TMCSAnonymous {
             signInMsg.setSign(sign.signature.packets.write());
             this.websocket.send(signInMsg.serializeBinary());
             // <- Comfirm
-            buffer = yield util_1.waitWebSocketBinary(this.websocket, this.timeout);
+            buffer = yield this.msgQueue.receive(this.timeout); // await waitWebSocketBinary(this.websocket, this.timeout);
             const confirm = tmcs_proto_1.default.TMCSMsg.ServerHandShake.deserializeBinary(buffer);
             this.state = "ready";
-            this.websocket.onmessage = (ev) => this.handle(ev);
+            this.msgLoop();
         });
     }
-    handle(ev) {
+    msgLoop() {
+        return __awaiter(this, void 0, void 0, function* () {
+            let msg;
+            while (true) {
+                msg = yield this.msgQueue.receive();
+                this.handle(msg);
+            }
+        });
+    }
+    handle(buffer) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const buffer = yield util_1.readBlob(ev.data);
                 const signedMsg = tmcs_proto_1.default.TMCSMsg.SignedMsg.deserializeBinary(buffer);
                 switch (signedMsg.getType()) {
                     case tmcs_proto_1.default.TMCSMsg.SignedMsg.Type.ERROR:

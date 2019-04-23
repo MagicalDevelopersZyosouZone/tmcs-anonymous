@@ -1,4 +1,5 @@
 import * as openpgp from "openpgp";
+import { WebSocketMessageQueue } from "./util";
 import { Message } from "./message";
 import { User } from "./user";
 import { Session } from "./session";
@@ -23,6 +24,7 @@ export default class TMCSAnonymous {
     inviteLink: string;
     onNewSession: PromiseEventTrigger<Session, any>;
     onContactRequest: PromiseEventTrigger<User, boolean>;
+    msgQueue: WebSocketMessageQueue;
     private messageArchive;
     private packageArchive;
     private readonly httpProtocol;
@@ -34,6 +36,7 @@ export default class TMCSAnonymous {
     registerKey(): Promise<string>;
     sign(buffer: Uint8Array): Promise<Uint8Array>;
     connect(): Promise<void>;
+    private msgLoop;
     private handle;
     private errorHandler;
     private msgHandler;

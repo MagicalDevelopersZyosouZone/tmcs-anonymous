@@ -171,14 +171,15 @@ func (session *Session) verify(pubkey openpgp.EntityList, data []byte, sign []by
 }
 
 func (session *Session) verifyMsg(msg *tmcs_msg.SignedMsg) bool {
-	signer, err := openpgp.CheckDetachedSignature(session.User.Key.PublicKey, bytes.NewBuffer(msg.Body), bytes.NewBuffer(msg.Sign))
-	if err != nil {
-		return false
-	}
-	if hex.EncodeToString(signer.PrimaryKey.Fingerprint[0:]) != session.User.Key.FingerPrint {
-		return false
-	}
-	return true
+	return msg.Sender == session.User.Key.FingerPrint
+	// signer, err := openpgp.CheckDetachedSignature(session.User.Key.PublicKey, bytes.NewBuffer(msg.Body), bytes.NewBuffer(msg.Sign))
+	// if err != nil {
+	// 	return false
+	// }
+	// if hex.EncodeToString(signer.PrimaryKey.Fingerprint[0:]) != session.User.Key.FingerPrint {
+	// 	return false
+	// }
+	// return true
 }
 
 // Write text message to connection

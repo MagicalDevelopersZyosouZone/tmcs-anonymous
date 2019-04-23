@@ -1,7 +1,7 @@
 import * as openpgp from "openpgp";
 import tmcs_msg from "tmcs-proto";
 import { TMCSError, TMCSMsg, TMCSRPC } from "tmcs-proto";
-import { waitWebsocketOpen, readBlob, waitWebSocketMessage, waitWebSocketBinary, promiseOrNot } from "./util";
+import { waitWebsocketOpen, readBlob, waitWebSocketMessage, waitWebSocketBinary, promiseOrNot, WebSocketMessageQueue } from "./util";
 import { Message, MessageState } from "./message";
 import { User } from "./user";
 import { Session } from "./session";
@@ -42,6 +42,7 @@ export default class TMCSAnonymous
     inviteLink = "";
     onNewSession = new PromiseEventTrigger<Session>();
     onContactRequest = new PromiseEventTrigger<User, boolean>();
+    msgQueue: WebSocketMessageQueue;
     private messageArchive: Message[] = [null];
     private packageArchive: TMCSMsg.SignedMsg[] = [null];
     private get httpProtocol() { return this.useSSL ? "https://" : "http://" }
@@ -100,6 +101,7 @@ export default class TMCSAnonymous
         }).then(response => response.json());
         if (result.error != tmcs_msg.TMCSError.ErrorCode.NONE)
         {
+            http://localhost:3000/chat/qdsacNqo
             throw new Error(result.msg);
         }
         this.state = "registed";
@@ -134,6 +136,12 @@ export default class TMCSAnonymous
         
         this.state = "connecting";
         this.websocket = new WebSocket(`${this.wsProtocol}${this.remoteAddress}/ws`);
+        
+        if (!this.msgQueue)
+            this.msgQueue = new WebSocketMessageQueue(this.websocket);
+        else
+            this.msgQueue.update(this.websocket, true);
+        
         await waitWebsocketOpen(this.websocket);
 
         // Handshake ->
@@ -142,7 +150,7 @@ export default class TMCSAnonymous
         this.websocket.send(handshake.serializeBinary());
 
         // <- Handshake
-        let buffer = await waitWebSocketBinary(this.websocket, this.timeout);
+        let buffer = await this.msgQueue.receive(this.timeout); // await waitWebSocketBinary(this.websocket, this.timeout);
         const serverHandshake = tmcs_msg.TMCSMsg.ServerHandShake.deserializeBinary(buffer);
         const token = openpgp.util.hex_to_Uint8Array(serverHandshake.getToken());
 
@@ -160,18 +168,27 @@ export default class TMCSAnonymous
         this.websocket.send(signInMsg.serializeBinary());
 
         // <- Comfirm
-        buffer = await waitWebSocketBinary(this.websocket, this.timeout);
+        buffer = await this.msgQueue.receive(this.timeout); // await waitWebSocketBinary(this.websocket, this.timeout);
         const confirm = tmcs_msg.TMCSMsg.ServerHandShake.deserializeBinary(buffer);
         this.state = "ready";
 
-        this.websocket.onmessage = (ev) => this.handle(ev);
+        this.msgLoop();
     }
 
-    private async handle(ev: MessageEvent)
+    private async msgLoop()
+    {
+        let msg: Uint8Array;
+        while (true)
+        {
+            msg = await this.msgQueue.receive();
+            this.handle(msg);
+        }
+    }
+
+    private async handle(buffer: Uint8Array)
     {
         try
         {
-            const buffer = await readBlob(ev.data);
             const signedMsg = tmcs_msg.TMCSMsg.SignedMsg.deserializeBinary(buffer);
             switch (signedMsg.getType())
             {

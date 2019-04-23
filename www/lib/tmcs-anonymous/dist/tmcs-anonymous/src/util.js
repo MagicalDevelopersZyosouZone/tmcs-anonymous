@@ -62,4 +62,91 @@ function promiseOrNot(input) {
     });
 }
 exports.promiseOrNot = promiseOrNot;
+class Queue {
+    constructor() {
+        this._length = 0;
+    }
+    get length() { return this._length; }
+    enqueue(element) {
+        if (!this.header)
+            this.header = this.tail = {
+                element: element,
+                next: null,
+                prior: null
+            };
+        else {
+            this.tail = {
+                element: element,
+                prior: this.tail,
+                next: null
+            };
+        }
+        if (this.tail.prior)
+            this.tail.prior.next = this.tail;
+        this._length++;
+        this.dequeueResolve && this.resolveDequeue();
+    }
+    rejectAwaiter(reason) {
+        const reject = this.dequeueReject;
+        this.dequeueReject = null;
+        this.dequeueResolve = null;
+        reject && reject(reason);
+        return;
+    }
+    resolveDequeue() {
+        return __awaiter(this, void 0, void 0, function* () {
+            if (this.dequeueResolve) {
+                const resolve = this.dequeueResolve;
+                this.dequeueResolve = null;
+                this.dequeueReject = null;
+                yield resolve(this.dequeueInternal());
+            }
+        });
+    }
+    dequeueInternal() {
+        var node = this.header;
+        this.header = this.header.next;
+        if (this.header)
+            this.header.prior = null;
+        this._length--;
+        return node.element;
+    }
+    dequeue() {
+        return __awaiter(this, void 0, void 0, function* () {
+            return new Promise((resolve, reject) => {
+                if (!this.header) {
+                    this.dequeueResolve = resolve;
+                    this.dequeueReject = reject;
+                }
+                else
+                    resolve(this.dequeueInternal());
+            });
+        });
+    }
+}
+exports.Queue = Queue;
+class WebSocketMessageQueue {
+    constructor(websocket) {
+        this.queue = new Queue();
+        this.websocket = websocket;
+        websocket.addEventListener("message", (e) => this.onMessage(e));
+    }
+    update(websocket, reject = false) {
+        this.websocket = websocket;
+        this.websocket.addEventListener("message", (e) => this.onMessage(e));
+        if (reject)
+            this.queue.rejectAwaiter(new Error("Stop message receiving"));
+    }
+    onMessage(e) {
+        return __awaiter(this, void 0, void 0, function* () {
+            this.queue.enqueue(yield readBlob(e.data));
+        });
+    }
+    receive(timeout) {
+        return __awaiter(this, void 0, void 0, function* () {
+            return yield this.queue.dequeue();
+        });
+    }
+}
+exports.WebSocketMessageQueue = WebSocketMessageQueue;
 //# sourceMappingURL=util.js.map
