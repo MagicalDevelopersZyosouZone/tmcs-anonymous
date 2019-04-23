@@ -1,17 +1,20 @@
 {
   "name": "tmcs-anonymous",
-  "version": "1.0.0",
+  "version": "0.2.0",
   "description": "A PGP based anonymous IM platform.",
   "main": "index.js",
   "scripts": {
-    "build": "npm run build:www",
+    "build": "npm run build:tmcs && npm run build:www",
     "build:go": "export GOPATH=$PWD && cd src/tmcs-anonymous && go build",
     "build:www": "npx webpack",
     "build:watch": "npx webpack -w --mode development",
+    "build:tmcs": "npm run build:proto && cd ./www/lib/tmcs-anonymous && npm run build",
+    "build:proto": "cd ./www/lib/tmcs-proto && npm run build:js",
     "copy-openpgp": "cp ./node_modules/openpgp/dist/openpgp.min.js ./www/dist/script/openpgp.min.js && cp ./node_modules/openpgp/dist/openpgp.worker.min.js ./www/dist/script/openpgp.worker.min.js",
     "test": "npx mocha ./www/test/test.js",
     "protoc": "rm -r src/tmcs_msg && cd www/lib/tmcs-proto && npm run protoc:go && cp -r ./go/ ../../../src/tmcs_msg/",
-    "go-install": "export GOPATH=$PWD && cd src/tmcs-anonymous && go get -v . "
+    "go-install": "export GOPATH=$PWD && cd src/tmcs-anonymous && go get -v . ",
+    "preinstall": "git submodule update --init --recursive"
   },
   "keywords": [
     "pgp",
