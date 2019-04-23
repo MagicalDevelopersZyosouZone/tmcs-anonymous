@@ -8,7 +8,6 @@ RUN cd /go/src/tmcs-anonymous/src/tmcs-anonymous && \
     go get
 ENV GOPATH=/go/src/tmcs-anonymous
 EXPOSE 3000
-CMD cd /go/src/tmcs-anonymous/src/tmcs-anonymous && \
-    go install && \
-    cd /go/src/tmcs-anonymous && \
-    ./tmcs-anonymous
+CMD cd /go/src/tmcs-anonymous &&\
+    go install tmcs-anonymous && \
+    ./bin/tmcs-anonymous
