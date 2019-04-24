@@ -36,6 +36,7 @@ export default class TMCSAnonymous {
     registerKey(): Promise<string>;
     sign(buffer: Uint8Array): Promise<Uint8Array>;
     connect(): Promise<void>;
+    private onDisconnect;
     private msgLoop;
     private handle;
     private errorHandler;

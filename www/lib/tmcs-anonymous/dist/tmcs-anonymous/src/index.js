@@ -158,7 +158,15 @@ class TMCSAnonymous {
             buffer = yield this.msgQueue.receive(this.timeout); // await waitWebSocketBinary(this.websocket, this.timeout);
             const confirm = tmcs_proto_1.default.TMCSMsg.ServerHandShake.deserializeBinary(buffer);
             this.state = "ready";
+            this.websocket.onclose = () => this.onDisconnect();
             this.msgLoop();
+        });
+    }
+    onDisconnect() {
+        return __awaiter(this, void 0, void 0, function* () {
+            console.log("Disconnected.");
+            console.log("Reconnecting...");
+            yield this.connect();
         });
     }
     msgLoop() {

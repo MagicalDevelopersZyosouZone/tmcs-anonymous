@@ -3,7 +3,7 @@ import { User, Session, Message, MessageState } from "tmcs-anonymous";
 import TMCSAnonymous from "tmcs-anonymous";
 import { formatFingerprint, buildClassName } from "./util";
 import { Dialog, Button, IconText } from "./components";
-import { IconKey, IconVerify, IconWarn, IconSend, IconLoading, IconCheck, IconWarnNoBackground, IconCross, IconEdit, IconMore } from "./icons";
+import { IconKey, IconVerify, IconWarn, IconSend, IconLoading, IconCheck, IconWarnNoBackground, IconCross, IconEdit, IconMore, IconMenu, IconLeft } from "./icons";
 
 
 interface PendingContactRequest
@@ -30,6 +30,7 @@ interface TMCSAnonymousState
     sessions: SessionInfo[];
     activeSession: Session;
     contactRequests: PendingContactRequest[];
+    sideVisible: boolean;
 }
 
 export class TMCSAnonymousUI extends React.Component<TMCSAnonymousProps, TMCSAnonymousState>
@@ -50,7 +51,8 @@ export class TMCSAnonymousUI extends React.Component<TMCSAnonymousProps, TMCSAno
                 };
             }),
             activeSession: props.tmcs.sessions[0],
-            contactRequests: []
+            contactRequests: [],
+            sideVisible: false
         };
     }
     async componentDidMount()
@@ -97,11 +99,17 @@ export class TMCSAnonymousUI extends React.Component<TMCSAnonymousProps, TMCSAno
     {
         this.setState({ activeSession: session });
     }
+    menuClick()
+    {
+        this.setState({
+            sideVisible: !this.state.sideVisible
+        });
+    }
     render()
     {
         return (
-            <div className="tmcs">
-                <aside className="side-menu">
+            <div className={buildClassName("tmcs", this.state.sideVisible && "extend-side")}>
+                <aside className={buildClassName("side-menu")}>
                     <header className="user-info">
                         <div className="name">{this.props.tmcs.user.name}</div>
                         <div className="fingerprint">{formatFingerprint(this.props.tmcs.user.fingerprint)}</div>
@@ -114,29 +122,44 @@ export class TMCSAnonymousUI extends React.Component<TMCSAnonymousProps, TMCSAno
                         {
                             this.state.contactRequests.map((request, idx) => (
                                 <li key={idx}>
-                                    <ContactRequest user={request.user} onResolved={(result)=>this.resolveContactRequest(result, idx)}></ContactRequest>
+                                    <ContactRequest user={request.user} onResolved={(result) => this.resolveContactRequest(result, idx)}></ContactRequest>
                                 </li>
                             ))
                         }
                         {
                             this.state.sessions.map((session, idx) => (
                                 <li key={idx}>
-                                    <SessionTag session={session} active={session.session === this.state.activeSession} onClick={()=>this.sessionTagClick(session.session)}></SessionTag>
+                                    <SessionTag session={session} active={session.session === this.state.activeSession} onClick={() => this.sessionTagClick(session.session)}></SessionTag>
                                 </li>
                             ))
                         }
                     </ul>
                 </aside>
-                <main className="chatting">
-                    {
-                        this.state.activeSession
-                            ? <ChatSession session={this.state.activeSession} tmcs={this.props.tmcs}></ChatSession>
-                            : null
-                    }
-                </main>
-                <aside className="setup">
-                </aside>
-                <Dialog ref={this.dialog}></Dialog>
+                <div className="vertical-layout">
+                    <header className="top-bar">
+                        {
+                            this.state.sideVisible
+                                ? <IconLeft className="icon-menu" onClick={() => this.menuClick()}/>
+                                : <IconMenu onClick={() => this.menuClick()} />
+                        }
+                        {
+                            this.state.activeSession
+                                ? <div className="session-info">
+                                    <span className="name">{this.state.activeSession.name}</span>
+                                    <span className="email">{this.state.activeSession.users[1].email}</span>
+                                    <span className="fingerprint">{formatFingerprint(this.state.activeSession.users[1].fingerprint)}</span>
+                                </div>
+                                : null
+                        }
+                    </header>
+                    <main className="chatting">
+                        {
+                            this.state.activeSession
+                                ? <ChatSession session={this.state.activeSession} tmcs={this.props.tmcs}></ChatSession>
+                                : null
+                        }
+                    </main>
+                </div>
             </div>
         );
     }
@@ -280,10 +303,9 @@ class ChatSession extends React.Component<ChatScreenProps, ChatScreenState>
                     </div>
                 </div>
                 <div className="input-area">
+                    <TMCSInput ref="text-input"></TMCSInput>
                     <div className="tools-bar">
                         <IconSend className="icon-button button-send"/>
-                    </div>
-                    <div className="input textbox" contentEditable={true} data-placeholder="Input text here">
                     </div>
                 </div>
             </div>
