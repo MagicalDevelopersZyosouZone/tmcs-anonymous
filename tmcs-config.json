@@ -1,0 +1,10 @@
+{
+    "address": "0.0.0.0:3000",
+    "tls": false,
+    "cert": "",
+    "certKey": "",
+    "keyPassPhase": "",
+    "maxBuffer": 4096,
+    "inviteLinkExpire": 300,
+    "sessionExpire": 1800
+}

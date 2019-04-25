@@ -2,6 +2,7 @@ FROM golang:1.12-stretch
 WORKDIR /go/src/tmcs-anonymous
 COPY ./src /go/src/tmcs-anonymous/src
 COPY ./www /go/src/tmcs-anonymous/www
+COPY ./tmcs-config.json /go/src/tmcs-anonymous/tmcs-config.json
 SHELL ["bash", "-c"]
 RUN cd /go/src/tmcs-anonymous/src/tmcs-anonymous && \
     export GOPATH=/go/src/tmcs-anonymous && \

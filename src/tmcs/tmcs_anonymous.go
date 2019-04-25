@@ -2,8 +2,13 @@ package tmcs
 
 import (
 	"cache"
+	tmcs_config "config"
+	"os"
+	"serverlog"
 	"user"
 )
+
+const MaxChannelBuffer = 100
 
 type TMCSAnonymous struct {
 	RegistedKeys *cache.ObjectCache
@@ -11,14 +16,17 @@ type TMCSAnonymous struct {
 	Server       *TMCSAnonymousServer
 }
 
-func NewTMCSAnonymous() *TMCSAnonymous {
+func NewTMCSAnonymous(config *tmcs_config.TMCSConfig) *TMCSAnonymous {
 	tmcs := new(TMCSAnonymous)
-	tmcs.Server = NewTMCSAnonymousServer(tmcs, TMCSAnonymousServerOptions{
-		Address:       "0.0.0.0:3000",
-		MaxBufferSize: 8192,
-	})
-	tmcs.RegistedKeys = cache.NewObjectCache(100)
-	tmcs.Users = cache.NewObjectCache(100)
+	server, err := NewTMCSAnonymousServer(tmcs, config)
+	if err != nil {
+		serverlog.Error(err.Error())
+		os.Exit(1)
+		return nil
+	}
+	tmcs.Server = server
+	tmcs.RegistedKeys = cache.NewObjectCache(MaxChannelBuffer)
+	tmcs.Users = cache.NewObjectCache(MaxChannelBuffer)
 	return tmcs
 }
 
