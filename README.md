@@ -80,6 +80,22 @@ $ docker container run  \
     tmcs-anonymous      \
 ```
 
+## Configure Server
+
+We provide servral options in `tmcs-config.json` to configure the TMCS Anonymous server. Simply edit it before running the server.
+
+The explaination of each options show below.
+
+| Options          | Type   | Description |
+|------------------|--------|-------------|
+| adress           | string | Host and port the server will listen to. eg. `0.0.0.0:3000`
+| tls              | bool   | Use TLS or not. |
+| cert             | string | The certificate file path (if using TLS). |
+| certKey          | string | The key file of the certificate. |
+| maxBuffer        | int    | The buffer size of the WebSocket connection. |
+| inviteLinkExpire | int    | The expiration time of the invite link in seconds. |
+| sessionExpire    | int    | The expiration time of an anonymous session, The session without any action will be remove after this time. |
+
 ## Nginx Configure
 
 You might need to configure an nginx to proxy the http request. 

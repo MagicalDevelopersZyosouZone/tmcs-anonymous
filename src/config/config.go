@@ -14,8 +14,8 @@ type TMCSConfig struct {
 	CertKey          string
 	KeyPassPhase     string
 	MaxBuffer        int
-	InviteLinkExpire int
-	SessionExpire    int
+	InviteLinkExpire int64
+	SessionExpire    int64
 }
 
 func ReadConfig(file string) (*TMCSConfig, error) {

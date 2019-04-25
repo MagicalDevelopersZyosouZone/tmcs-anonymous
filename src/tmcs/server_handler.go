@@ -28,8 +28,6 @@ type responseMsg struct {
 	Data  interface{}
 }
 
-const keyExpire = 30000000
-
 func (msg *responseMsg) ToJSON() []byte {
 	obj := make(map[string]interface{})
 	obj["error"] = int(msg.Error)
@@ -44,7 +42,7 @@ func (msg *responseMsg) ToJSON() []byte {
 
 func (server *TMCSAnonymousServer) userRenewer(usr *user.User) func() {
 	return func() {
-		server.tmcs.Users.Renew(usr.Key.FingerPrint, keyExpire)
+		server.tmcs.Users.Renew(usr.Key.FingerPrint, server.config.SessionExpire)
 	}
 }
 
@@ -100,7 +98,7 @@ func (server *TMCSAnonymousServer) tryRegister(w http.ResponseWriter, r *http.Re
 	}
 	keyBuffer := bytes.NewBuffer(nil)
 	pubkey.Serialize(keyBuffer)
-	key, err := user.NewKey(keyBuffer.Bytes(), keyExpire)
+	key, err := user.NewKey(keyBuffer.Bytes())
 	usr := user.NewUser(msg.Name, key, server.tmcs)
 	usr.Renew = server.userRenewer(usr)
 	return usr
@@ -141,8 +139,8 @@ func (server *TMCSAnonymousServer) handleRegister() func(http.ResponseWriter, *h
 			goto ReGen
 		}
 
-		server.tmcs.RegistedKeys.Set(sessionId, usr.Key, keyExpire)
-		server.tmcs.Users.Set(usr.Key.FingerPrint, usr, keyExpire)
+		server.tmcs.RegistedKeys.Set(sessionId, usr.Key, server.config.InviteLinkExpire)
+		server.tmcs.Users.Set(usr.Key.FingerPrint, usr, server.config.SessionExpire)
 
 		responseData := make(map[string]string)
 		responseData["pubkey"] = ""
@@ -228,7 +226,7 @@ func (server *TMCSAnonymousServer) handleSessionRegister(w http.ResponseWriter, 
 		return
 	}
 
-	server.tmcs.Users.Set(usr.Key.FingerPrint, usr, keyExpire)
+	server.tmcs.Users.Set(usr.Key.FingerPrint, usr, server.config.SessionExpire)
 
 	w.WriteHeader(http.StatusOK)
 	armored, err := (contact.(*user.User)).Key.Armor()
