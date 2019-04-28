@@ -42,7 +42,7 @@ func (msg *responseMsg) ToJSON() []byte {
 
 func (server *TMCSAnonymousServer) userRenewer(usr *user.User) func() {
 	return func() {
-		server.tmcs.Users.Renew(usr.Key.FingerPrint, server.config.SessionExpire)
+		server.tmcs.Users.Renew(usr.Key.FingerPrint, server.config.SessionExpireMs)
 	}
 }
 
@@ -139,8 +139,8 @@ func (server *TMCSAnonymousServer) handleRegister() func(http.ResponseWriter, *h
 			goto ReGen
 		}
 
-		server.tmcs.RegistedKeys.Set(sessionId, usr.Key, server.config.InviteLinkExpire)
-		server.tmcs.Users.Set(usr.Key.FingerPrint, usr, server.config.SessionExpire)
+		server.tmcs.RegistedKeys.Set(sessionId, usr.Key, server.config.InviteLinkExpireMs)
+		server.tmcs.Users.Set(usr.Key.FingerPrint, usr, server.config.SessionExpireMs)
 
 		responseData := make(map[string]string)
 		responseData["pubkey"] = ""
@@ -226,7 +226,7 @@ func (server *TMCSAnonymousServer) handleSessionRegister(w http.ResponseWriter, 
 		return
 	}
 
-	server.tmcs.Users.Set(usr.Key.FingerPrint, usr, server.config.SessionExpire)
+	server.tmcs.Users.Set(usr.Key.FingerPrint, usr, server.config.SessionExpireMs)
 
 	w.WriteHeader(http.StatusOK)
 	armored, err := (contact.(*user.User)).Key.Armor()

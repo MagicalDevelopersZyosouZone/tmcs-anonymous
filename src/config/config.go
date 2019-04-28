@@ -8,14 +8,16 @@ import (
 )
 
 type TMCSConfig struct {
-	Address          string
-	TLS              bool
-	Cert             string
-	CertKey          string
-	KeyPassPhase     string
-	MaxBuffer        int
-	InviteLinkExpire int64
-	SessionExpire    int64
+	Address            string
+	TLS                bool
+	Cert               string
+	CertKey            string
+	KeyPassPhase       string
+	MaxBuffer          int
+	InviteLinkExpireMs int64
+	InviteLinkExpire   int64
+	SessionExpireMs    int64
+	SessionExpire      int64
 }
 
 func ReadConfig(file string) (*TMCSConfig, error) {
@@ -32,5 +34,7 @@ func ReadConfig(file string) (*TMCSConfig, error) {
 	if err != nil {
 		return nil, errors.New("Cannot read config file '" + file + "'" + err.Error())
 	}
+	config.InviteLinkExpireMs = config.InviteLinkExpire * 1000
+	config.SessionExpireMs = config.InviteLinkExpire * 1000
 	return config, nil
 }
