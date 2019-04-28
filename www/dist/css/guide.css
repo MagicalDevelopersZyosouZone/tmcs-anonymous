@@ -355,3 +355,53 @@
         transform: translateY(0);
     }
 }
+
+@media all and (max-width: 800px){
+    .startup{
+        display: block;
+        position: relative;
+        height: auto;
+        width: auto;
+        overflow: auto;
+        height: 100vh;
+    }
+    .startup .guide{
+        padding: 1em;
+        margin: 0;
+        width: 100%;
+        min-height: 100vh;
+        height: auto;
+        box-sizing: border-box;
+        display: block;
+        box-shadow: none;
+        border-radius: 0;
+        display: flex;
+        flex-flow: column nowrap;
+        justify-content: flex-start;
+        align-items: stretch;
+    }
+    .guide .page.active{
+        position: relative;
+        min-height: 100%;
+    }
+    
+    .guide .page.full-screen{
+        position: absolute;
+        height: 100%;
+        width: 100%;
+    }
+    .guide .content{
+    }
+    .guide .actions{
+        margin-top: 2em;
+    }
+    .guide .page > .wrapper{
+        padding: 0 1em;
+    }
+    .guide .page > .wrapper > .about{
+        margin-bottom: 2em;
+    }
+    .guide .request-page, .guide .sign-up{
+        height: 70vh;
+    }
+}

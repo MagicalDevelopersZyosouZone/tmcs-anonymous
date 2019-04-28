@@ -1,5 +1,6 @@
 import React, { Children } from "react";
 import { IconCheckedBox, IconUncheckedBox, IconCopy, IconCheck } from "./icons";
+import { buildClassName } from "./util";
 
 interface DialogState
 {
@@ -214,9 +215,10 @@ export class Guide extends React.Component<GuideProps, GuideState>
                                 return null;
                             const element = child as React.ReactElement;
                             const Type = element.type;
-                            const props = { _guide: this, _callback: (p: any) => this.onPageCreate(p, idx), ...element.props };
+                            const className = (element.props as GuidePageProps).className;
+                            const props = {_guide: this, _callback: (p: any) => this.onPageCreate(p, idx), ...element.props };
                             return (
-                                <section className={["page", this.state.activePage === idx ? "active" : "inactive"].join(" ")} key={idx}>
+                                <section className={buildClassName("page", this.state.activePage === idx ? "active" : "inactive", className)} key={idx}>
                                     {
                                         GuidePage.isPrototypeOf(Type)
                                             ? <Type {...props}>
@@ -240,6 +242,7 @@ export class Guide extends React.Component<GuideProps, GuideState>
 
 export interface GuidePageProps
 {
+    className?: string;
     _guide?: Guide;
     _callback?: (page: GuidePage<any, any>) => void;
 }

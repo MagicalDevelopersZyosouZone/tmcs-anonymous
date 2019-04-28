@@ -110,6 +110,9 @@ export class TMCSAnonymousUI extends React.Component<TMCSAnonymousProps, TMCSAno
         return (
             <div className={buildClassName("tmcs", this.state.sideVisible && "extend-side")}>
                 <aside className={buildClassName("side-menu")}>
+                    <div className="top-menu">
+                        <IconLeft className="close-menu" onClick={()=>this.menuClick()}/>
+                    </div>
                     <header className="user-info">
                         <div className="name">{this.props.tmcs.user.name}</div>
                         <div className="fingerprint">{formatFingerprint(this.props.tmcs.user.fingerprint)}</div>
@@ -302,12 +305,7 @@ class ChatSession extends React.Component<ChatScreenProps, ChatScreenState>
                         }
                     </div>
                 </div>
-                <div className="input-area">
-                    <TMCSInput ref="text-input"></TMCSInput>
-                    <div className="tools-bar">
-                        <IconSend className="icon-button button-send"/>
-                    </div>
-                </div>
+                <InputArea onSend={(text)=>this.send(text)}/>
             </div>
         );
     }
@@ -420,6 +418,31 @@ class InputCard extends React.Component<{ onSend: (msg: string) => void }>
                     <div className="card">
                         <TMCSInput ref="input-text" onSend={()=>this.send()}/>
                     </div>
+                    <IconSend className="icon-button button-send" onClick={() => this.send()} />
+                </div>
+            </div>
+        );
+    }
+}
+
+class InputArea extends React.Component<{ onSend: (msg: string) => void }>
+{
+
+    send()
+    {
+        const input = this.refs["input-text"] as TMCSInput;
+        const text = input.getText();
+        if (text === "")
+            return;
+        input.clear();
+        this.props.onSend(text);
+    }
+    render()
+    {
+        return (
+            <div className="input-area">
+                <TMCSInput ref="input-text" onSend={()=>this.send()}></TMCSInput>
+                <div className="tools-bar">
                     <IconSend className="icon-button button-send" onClick={() => this.send()} />
                 </div>
             </div>

@@ -176,6 +176,21 @@ input,
     box-shadow: 0px 0px 30px rgba(0, 0, 0, 0.2);
     user-select: none;
 }
+.side-menu .top-menu{
+    background-color: #777;
+    height: 3em;
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: flex-start;
+    align-items: center;
+    display: none;
+    z-index: 1;
+}
+.side-menu .close-menu{
+    height: 2em;
+    padding: .5em 2em;
+    fill: white;
+}
 
 .chatting {
     flex: 1 0;
@@ -199,6 +214,8 @@ input,
     font-size: 0.8em;
     color: #CCC;
     margin-bottom: 1em;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .side-menu .user-info .keys * {
@@ -621,7 +638,8 @@ input,
 .input-area {
     background-color: #777;
     display: flex;
-    flex-flow: column nowrap;
+    flex-flow: row nowrap;
+    align-items: flex-start;
     overflow: hidden;
 }
 .input-area {
@@ -630,34 +648,31 @@ input,
 
 
 .input-area .tools-bar {
-    height: 2.4em;
     display: flex;
     flex-flow: row nowrap;
     align-items: center;
     background-color: #777;
-    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
     z-index: 1;
-    padding: 0 1em;
 }
 
 .input-area .tools-bar .icon {
-    height: 2em;
+    height: 2.4em;
     fill: #CCC;
     transition: all .1s;
     cursor: pointer;
-}
-
-.input-area .tools-bar .icon-button:hover {
-    fill: #82d5d8;
+    padding: .5em;
 }
 
 .input-area .input {
     flex: 1 0;
-    min-height: 100px;
-    background-color: #4A4A4A;
-    box-sizing: border-box;
-    padding: .5em 1em;
+    font-size: 1em;
+    background-color: #555;
+    min-height: 1em;
+    padding: 1em;
     transition: all .1s;
+    overflow-x: hidden;
+    overflow-y: auto;
+    max-height: 8em;
 }
 
 .input-area .input:focus {
@@ -690,11 +705,34 @@ input,
 }
 
 @media all and (max-width: 800px){
+    *::-webkit-scrollbar {
+        width: 3px;
+    }
     .top-bar {
         background-color: #555;
+        
+    }
+    .tmcs.extend-side {
+        transform: none;
     }
     .top-bar .session-info .fingerprint{
         display: none;
+    }
+    .side-menu{
+        width: 24em;
+        max-width: 100vw;
+        position: fixed;
+        height: 100%;
+        z-index: 10;
+        transition: left .2s;
+        
+    }
+    .tmcs.extend-side .side-menu{
+        left: 0;
+        box-shadow: 0 0 10vw rgba(0,0,0,0.3);
+    }
+    .side-menu .top-menu{
+        display: flex;
     }
     .input-card{
         display: none;

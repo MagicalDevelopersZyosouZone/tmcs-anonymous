@@ -39,7 +39,7 @@ export class TMCSAnonymousStartup extends React.Component<StartupProps>
                             <KeyGen tmcs={this.props.tmcs} />
                             <KeyResult tmcs={this.props.tmcs} />
                             <SignUp tmcs={this.props.tmcs} />
-                            <ShareLink tmcs={this.props.tmcs} />
+                            <ShareLink className="full-screen" tmcs={this.props.tmcs} />
                         </Guide>
                 }
             </div>
