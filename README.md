@@ -10,6 +10,7 @@ Developed with go as back-end & web as front-end.
   - [Build back-end](#build-back-end)
     - [Directly build](#directly-build)
     - [Build as Docker image](#Build-as-Docker-image)
+- [Configure Server](#configure-server)
 - [Nginx Configure](#Nginx-Configure)
 
 ## Installation
@@ -65,6 +66,8 @@ $ ./bin/tmcs-anonymous
 The Server will listen on `0.0.0.0:3000` by default.
 
 #### Build as Docker image
+
+You might want to [configure the server](#configure-server) before build it into a docker image.
 
 Just run the command below to build a docker
 ```shell
