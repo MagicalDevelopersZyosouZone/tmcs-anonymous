@@ -62,7 +62,7 @@ func (session *Session) recv() {
 		default:
 			msgType, buffer, err := session.connection.ReadMessage()
 			if err != nil {
-				serverlog.Error("Failed to receive from <", session.User.Key.FingerPrint, ">: ", err.Error())
+				serverlog.Error("Failed to receive from {", session.User.Key.FingerPrint, "}: ", err.Error())
 				session.Close()
 				// continue
 				return
@@ -80,7 +80,7 @@ func (session *Session) recv() {
 					Receiver: session.User,
 					Msg:      session.errorMessage(tmcs_msg.ErrorCode_InvalidMessage, "Invalid message.", fmt.Sprint(msg.Id)),
 				})
-				serverlog.Warn("Invalid message from <", session.User.Key.FingerPrint, ">.")
+				serverlog.Warn("Invalid message from }", session.User.Key.FingerPrint, "}.")
 				continue
 			}
 			if !session.verifyMsg(msg) {
@@ -89,7 +89,7 @@ func (session *Session) recv() {
 					Receiver: session.User,
 					Msg:      session.errorMessage(tmcs_msg.ErrorCode_VerifyError, "Signature verification fail.", fmt.Sprint(msg.Id)),
 				})
-				serverlog.Warn("Signature verify failed from <", session.User.Key.FingerPrint, ">.")
+				serverlog.Warn("Signature verify failed from {", session.User.Key.FingerPrint, "}.")
 				continue
 			}
 			session.dispacth(msg)
@@ -128,7 +128,7 @@ func (session *Session) send() {
 			buffer, err := proto.Marshal(msg.Msg)
 			if err != nil {
 				if msg.Sender != nil {
-					serverlog.Error("Failed to marshal message from <", msg.Sender.Key.FingerPrint, ">.")
+					serverlog.Error("Failed to marshal message from {", msg.Sender.Key.FingerPrint, "}.")
 				} else {
 					serverlog.Error("Failed to marshal message from internal server.")
 				}
@@ -295,7 +295,7 @@ func (session *Session) handshake(usersLib *cache.ObjectCache) bool {
 
 	val, ok := usersLib.Get(signin.FingerPrint)
 	if !ok {
-		session.echo(fmt.Sprint("Public key of '", signin.FingerPrint, "' not found."))
+		session.echo(fmt.Sprint("Public key of {", signin.FingerPrint, "} not found."))
 		session.connection.Close()
 		return false
 	}

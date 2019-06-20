@@ -101,9 +101,9 @@ func (server *TMCSAnonymousServer) Start() error {
 	server.router.PathPrefix("/").Handler(http.FileServer(http.Dir("./www/dist")))
 	go server.serverProc()
 	if server.config.TLS {
-		serverlog.Log("Server listened on", server.Addr, "with TLS")
+		serverlog.Log("Server listened on ", server.Addr, " with TLS")
 	} else {
-		serverlog.Log("Server listened on", server.Addr)
+		serverlog.Log("Server listened on ", server.Addr)
 	}
 	<-server.chClose
 	serverlog.Log("Server closed.")
