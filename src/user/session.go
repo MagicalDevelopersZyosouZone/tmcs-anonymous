@@ -354,6 +354,7 @@ func (session *Session) Join(origin *Session) {
 // Close the connection
 func (session *Session) Close() {
 	if session.Connected {
+		serverlog.Log("Closing a session of user {", session.User.Key.FingerPrint, "}")
 		session.chClose <- 1
 		session.chClose <- 1
 		if session.connection != nil {
