@@ -28,7 +28,7 @@ func msgCat(msg ...interface{}) string {
 
 func Log(msg ...interface{}) {
 	fmt.Print("[", time.Now().Format("2006-01-02 15:04:05"), "][Log]")
-	fmt.Println(msg...)
+	fmt.Println(msgCat(msg...))
 	if serverLog.logFile != "" {
 		f, err := os.Open(serverLog.logFile)
 		defer f.Close()
@@ -42,7 +42,7 @@ func Log(msg ...interface{}) {
 
 func Warn(msg ...interface{}) {
 	fmt.Print("[", time.Now().Format("2006-01-02 15:04:05"), "][Warn]")
-	fmt.Println(msg...)
+	fmt.Println(msgCat(msg...))
 	if serverLog.logFile != "" {
 		f, err := os.Open(serverLog.logFile)
 		defer f.Close()
@@ -56,7 +56,7 @@ func Warn(msg ...interface{}) {
 
 func Error(msg ...interface{}) {
 	fmt.Print("[", time.Now().Format("2006-01-02 15:04:05"), "][Error]")
-	fmt.Println(msg...)
+	fmt.Println(msgCat(msg...))
 	if serverLog.logFile != "" {
 		f, err := os.Open(serverLog.logFile)
 		defer f.Close()
