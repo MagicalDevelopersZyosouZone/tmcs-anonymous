@@ -64,7 +64,8 @@ func (session *Session) recv() {
 			if err != nil {
 				serverlog.Error("Failed to receive from <", session.User.Key.FingerPrint, ">: ", err.Error())
 				session.Close()
-				continue
+				// continue
+				return
 			}
 			if msgType == websocket.TextMessage {
 				session.echo("Invalid message.")
