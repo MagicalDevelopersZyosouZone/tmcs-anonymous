@@ -51,7 +51,7 @@ export default class TMCSAnonymous
 
     constructor(address:string, useSSL:boolean = true)
     {
-        const reg = /^(https?:\/\/)?(.+?)\/?$/;
+        const reg = /^(https?:\/\/)?([^?]+?)\/?(\?.+)?$/;
         const match = reg.exec(address);
         if (match)
         {

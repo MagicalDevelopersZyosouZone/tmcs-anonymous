@@ -218,7 +218,7 @@
     align-items: stretch;
 }
 .share-page .share-link{
-    min-height: fit-content;
+    height: 2em;
 }
 .share-link{
     display: flex;

@@ -42,7 +42,7 @@ class TMCSAnonymous {
         this.onContactRequest = new event_1.PromiseEventTrigger();
         this.messageArchive = [null];
         this.packageArchive = [null];
-        const reg = /^(https?:\/\/)?(.+?)\/?$/;
+        const reg = /^(https?:\/\/)?([^?]+?)\/?(\?.+)?$/;
         const match = reg.exec(address);
         if (match) {
             this.remoteAddress = match[2];

@@ -11,7 +11,7 @@
                 "build",
                 "-o",
                 "./bin/tmcs-anonymous",
-                "./src"
+                "./src/tmcs-anonymous"
             ],
             "group": {
                 "kind": "build",

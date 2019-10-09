@@ -227,10 +227,12 @@ class ShareLink extends GuidePage<GuidePageProps & { tmcs: TMCSAnonymous }, {qrc
 
     async onPageActive()
     {
+        const qrCodeContainer = (this.refs["qr-code"] as HTMLElement).getBoundingClientRect();
         this.setState({
             qrcode: await qrcode.toDataURL(this.props.tmcs.inviteLink, {
-                scale: 16,
                 type: "image/webp",
+                width: Math.min(qrCodeContainer.width, qrCodeContainer.height),
+                margin: 2,
             })
         });
         this.guide.setNext(true, "ENTER");
@@ -253,7 +255,7 @@ class ShareLink extends GuidePage<GuidePageProps & { tmcs: TMCSAnonymous }, {qrc
                         <input type="text" className="content" value={this.props.tmcs.inviteLink} ref="link-copy" readOnly></input>
                         <IconCopy className="icon-copy" onClick={() => this.copy()} />
                     </div>
-                    <div className="qr-code">
+                    <div className="qr-code" ref="qr-code">
                         {
                             this.state.qrcode
                                 ? <img src={this.state.qrcode}></img>
